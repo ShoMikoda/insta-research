@@ -1,0 +1,12 @@
+{
+  "comment": "Bright DataのInstagramデータセットID。ログイン後にダッシュボードで実IDを確認して更新する。",
+  "api_base": "https://api.brightdata.com/datasets/v3",
+  "datasets": {
+    "profiles": "gd_l1vikfch901nx3by4",
+    "posts": "gd_lk5ns7kz21pck8jpis",
+    "reels": "gd_lyclm20il4r5helnj",
+    "comments": "gd_ltppn085pokosxh13",
+    "keyword_search": "gd_lnixyos0cjq3k7an7",
+    "hashtag_info": "gd_lp9xgqvwrt2wc2jjy"
+  }
+}

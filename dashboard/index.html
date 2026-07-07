@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>インスタ リサーチ</title>
+<style>
+  :root {
+    --bg: #faf7f2;
+    --card: #ffffff;
+    --text: #3d3a34;
+    --sub: #8a857c;
+    --accent: #e8927c;
+    --accent2: #7cb8a8;
+    --gold: #d4a94e;
+    --border: #eee8de;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: var(--bg); color: var(--text);
+    max-width: 640px; margin: 0 auto; padding: 16px 14px 60px;
+  }
+  header { padding: 18px 4px 10px; }
+  h1 { font-size: 20px; letter-spacing: .02em; }
+  #date { color: var(--sub); font-size: 12px; margin-top: 4px; }
+  nav {
+    display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px;
+  }
+  nav button {
+    border: 1px solid var(--border); background: var(--card); color: var(--sub);
+    border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+  }
+  nav button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  h2 {
+    font-size: 14px; color: var(--sub); font-weight: 600;
+    margin: 26px 4px 10px; letter-spacing: .06em;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px; margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
+  }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .rank { font-size: 15px; font-weight: 700; color: var(--gold); min-width: 26px; text-align: center; }
+  .grow { color: var(--accent2); font-weight: 700; }
+  .shrink { color: var(--accent); font-weight: 700; }
+  .name { font-weight: 700; font-size: 14px; word-break: break-all; }
+  .name a { color: inherit; text-decoration: none; }
+  .metrics { margin-left: auto; text-align: right; white-space: nowrap; }
+  .big { font-size: 16px; font-weight: 700; }
+  .small { font-size: 11px; color: var(--sub); }
+  .bio { font-size: 11px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
+  .post-cap { font-size: 12px; line-height: 1.55; margin-top: 6px; }
+  .post-meta { font-size: 11px; color: var(--sub); margin-top: 6px; display: flex; gap: 10px; }
+  .badge {
+    display: inline-block; font-size: 10px; padding: 2px 8px;
+    border-radius: 999px; background: #f6ece7; color: var(--accent); font-weight: 600;
+  }
+  .empty { color: var(--sub); font-size: 12px; padding: 8px 4px; }
+  footer { margin-top: 34px; text-align: center; color: var(--sub); font-size: 11px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">📊 インスタ リサーチ</h1>
+  <div id="date">読み込み中...</div>
+</header>
+<nav id="tabs"></nav>
+
+<h2>👑 フォロワーランキング</h2>
+<div id="followers"></div>
+
+<h2>💬 エンゲージェメント率ランキング</h2>
+<div id="engagement"></div>
+
+<h2>🔥 直近投稿のバズTOP10</h2>
+<div id="buzz"></div>
+
+<h2>🎬 アカウント別リールランキング</h2>
+<div id="reels"></div>
+
+<footer>Bright Data無料枠で毎朝自動更新 / 月額0円運用</footer>
+
+<script>
+const fmt = (n) => n == null ? "-" : n.toLocaleString("ja-JP");
+const pct = (n) => n == null ? "-" : (n * 100).toFixed(1) + "%";
+let categories = [];
+
+async function loadCategory(cat) {
+  document.querySelectorAll("nav button").forEach((b) =>
+    b.classList.toggle("active", b.dataset.id === cat.id));
+  document.getElementById("title").textContent = `${cat.icon ?? "📊"} ${cat.name}アカウント リサーチ`;
+
+  let d;
+  try {
+    d = await fetch(`../data/${cat.id}/latest.json`).then((r) => {
+      if (!r.ok) throw new Error("まだデータがありません");
+      return r.json();
+    });
+  } catch (e) {
+    document.getElementById("date").textContent = `「${cat.name}」はまだデータ未収集です。収集後に表示されます。`;
+    ["followers", "engagement", "buzz", "reels"].forEach((id) =>
+      document.getElementById(id).innerHTML = `<div class="empty">データなし</div>`);
+    return;
+  }
+
+  document.getElementById("date").textContent = `${d.date} 更新 / ウォッチ中: ${d.profiles.length}アカウント`;
+  const profiles = d.profiles.filter((p) => p.account);
+
+  // フォロワー増減(前回比)を履歴から計算
+  const delta = {};
+  for (const [name, days] of Object.entries(d.history || {})) {
+    const dates = Object.keys(days).sort();
+    if (dates.length >= 2) {
+      const last = days[dates[dates.length - 1]].followers;
+      const prev = days[dates[dates.length - 2]].followers;
+      if (last != null && prev != null) delta[name] = last - prev;
+    }
+  }
+
+  const followerRank = [...profiles].sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0));
+  document.getElementById("followers").innerHTML = followerRank.map((p, i) => {
+    const dl = delta[p.account];
+    const dTxt = dl == null ? `<span class="small">増減は明日から表示</span>`
+      : dl >= 0 ? `<span class="grow">+${fmt(dl)}</span>` : `<span class="shrink">${fmt(dl)}</span>`;
+    return `<div class="card"><div class="row">
+      <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+      <div><div class="name"><a href="https://www.instagram.com/${p.account}/" target="_blank">@${p.account}</a></div>
+      <div class="small">投稿 ${fmt(p.posts_count)}件</div></div>
+      <div class="metrics"><div class="big">${fmt(p.followers)}</div><div class="small">${dTxt}</div></div>
+    </div><div class="bio">${(p.biography ?? "").slice(0, 80)}</div></div>`;
+  }).join("") || `<div class="empty">データなし</div>`;
+
+  const engRank = [...profiles].sort((a, b) => (b.avg_engagement ?? 0) - (a.avg_engagement ?? 0));
+  document.getElementById("engagement").innerHTML = engRank.map((p, i) => `
+    <div class="card"><div class="row">
+      <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+      <div class="name"><a href="https://www.instagram.com/${p.account}/" target="_blank">@${p.account}</a></div>
+      <div class="metrics"><div class="big">${pct(p.avg_engagement)}</div>
+      <div class="small">フォロワー ${fmt(p.followers)}</div></div>
+    </div></div>`).join("") || `<div class="empty">データなし</div>`;
+
+  const posts = profiles.flatMap((p) => (p.posts ?? []).map((x) => ({ ...x, account: p.account })));
+  posts.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
+  document.getElementById("buzz").innerHTML = posts.slice(0, 10).map((x, i) => `
+    <div class="card">
+      <div class="row">
+        <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+        <div class="name">@${x.account}</div>
+        ${x.content_type === "Video" ? `<span class="badge">リール/動画</span>` : ""}
+        <div class="metrics"><div class="big">❤️ ${fmt(x.likes)}</div></div>
+      </div>
+      <div class="post-cap">${(x.caption ?? "").slice(0, 100)}${(x.caption ?? "").length > 100 ? "…" : ""}</div>
+      <div class="post-meta">
+        <span>💬 ${fmt(x.comments)}</span>
+        <span>${(x.datetime ?? "").slice(0, 10)}</span>
+        <a href="${x.url}" target="_blank">投稿を見る →</a>
+      </div>
+    </div>`).join("") || `<div class="empty">データなし</div>`;
+
+  // アカウント別リールランキング(再生回数があれば再生順、なければいいね順)
+  const reels = d.reels ?? [];
+  const hasPlays = reels.some((r) => r.plays != null);
+  const byAccount = {};
+  for (const r of reels) {
+    if (!r.account) continue;
+    (byAccount[r.account] ??= []).push(r);
+  }
+  const metricLabel = hasPlays ? "再生" : "いいね";
+  const sortKey = (r) => (hasPlays ? r.plays ?? 0 : r.likes ?? 0);
+  document.getElementById("reels").innerHTML = Object.entries(byAccount).map(([acc, list]) => {
+    list.sort((a, b) => sortKey(b) - sortKey(a));
+    const rows = list.slice(0, 5).map((r, i) => `
+      <div class="row" style="margin-top:10px; align-items:flex-start;">
+        <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+        <div style="flex:1; min-width:0;">
+          <div class="post-cap" style="margin-top:0;">${(r.description ?? "").slice(0, 60)}${(r.description ?? "").length > 60 ? "…" : ""}</div>
+          <div class="post-meta">
+            <span>${hasPlays ? `▶️ ${fmt(r.plays)}` : `❤️ ${fmt(r.likes)}`}</span>
+            <span>💬 ${fmt(r.comments)}</span>
+            ${r.length ? `<span>⏱ ${Math.round(r.length)}秒</span>` : ""}
+            <span>${(r.date ?? "").slice(0, 10)}</span>
+            <a href="${r.url}" target="_blank">見る →</a>
+          </div>
+        </div>
+      </div>`).join("");
+    return `<div class="card">
+      <div class="name"><a href="https://www.instagram.com/${acc}/" target="_blank">@${acc}</a>
+      <span class="small">の直近リール ${metricLabel}数TOP${Math.min(list.length, 5)}</span></div>
+      ${rows}
+    </div>`;
+  }).join("") || `<div class="empty">リールデータなし(次回収集から表示されます)</div>`;
+  document.getElementById("reels-note")?.remove();
+  if (!hasPlays && reels.length) {
+    document.getElementById("reels").insertAdjacentHTML("beforebegin",
+      `<div class="empty" id="reels-note">※Instagramの仕様で他アカウントの再生回数は非公開のため、いいね数順で表示しています</div>`);
+  }
+}
+
+fetch("../config/categories.json")
+  .then((r) => r.json())
+  .then(({ categories: cats }) => {
+    categories = cats;
+    const nav = document.getElementById("tabs");
+    nav.innerHTML = cats.map((c) =>
+      `<button data-id="${c.id}">${c.icon ?? ""} ${c.name}</button>`).join("");
+    nav.addEventListener("click", (e) => {
+      const id = e.target.dataset?.id;
+      if (id) loadCategory(cats.find((c) => c.id === id));
+    });
+    const initial = new URLSearchParams(location.search).get("cat");
+    loadCategory(cats.find((c) => c.id === initial) ?? cats[0]);
+  })
+  .catch((e) => {
+    document.getElementById("date").textContent = "カテゴリ設定の読み込みに失敗: " + e.message;
+  });
+</script>
+</body>
+</html>
