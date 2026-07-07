@@ -108,13 +108,20 @@
 
 <section id="admin" class="card">
   <div id="adm-token-view">
-    <h3>🔑 初回設定（管理機能を使うにはトークンが必要です）</h3>
-    <div class="small" style="line-height:1.6; margin-bottom:8px;">
-      GitHubのFine-grained personal access token（このリポジトリ限定・Contents/Actions書き込み権限）を貼り付けてください。この端末にのみ保存されます。
+    <h3>🔑 初回設定（1回だけ・2分で終わります）</h3>
+    <div class="small" style="line-height:1.8; margin-bottom:8px;">
+      検索や更新の実行に、GitHubの「アクセストークン」が必要です：<br>
+      <b>1.</b> 下のボタンで作成ページを開く（必要な権限は選択済み）<br>
+      <b>2.</b> Expiration を「No expiration」にして、一番下の緑の「<b>Generate token</b>」を押す<br>
+      <b>3.</b> 表示された <code>ghp_...</code> をコピーして、ここに貼り付けて保存
+    </div>
+    <div style="margin-bottom:10px;">
+      <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=insta-research-app" target="_blank"
+         class="btn" style="display:inline-block; text-decoration:none;">① トークン作成ページを開く</a>
     </div>
     <div class="inline">
-      <input type="password" id="adm-token" placeholder="github_pat_...">
-      <button class="btn" id="adm-token-save">保存</button>
+      <input type="password" id="adm-token" placeholder="ghp_... を貼り付け">
+      <button class="btn" id="adm-token-save">③ 保存</button>
     </div>
   </div>
   <div id="adm-main" style="display:none;">
@@ -530,7 +537,13 @@ window.showDiscover = async (slug) => {
 };
 
 window.discAdd = (name) => {
-  if (!token()) { alert("追加には⚙️の初回設定（トークン）が必要です"); return; }
+  if (!token()) {
+    $("admin").classList.add("open");
+    renderAdmin();
+    $("admin").scrollIntoView({ behavior: "smooth" });
+    status("⬇ 追加するには、この初回設定（2分）だけお願いします", true);
+    return;
+  }
   const catId = $("disc-cat").value;
   const cat = categories.find((c) => c.id === catId);
   if (cat.accounts.includes(name)) { status(`@${name} は既に「${cat.name}」に登録済みです`, true); $("admin").classList.add("open"); return; }
@@ -542,7 +555,13 @@ window.discAdd = (name) => {
 $("disc-run").addEventListener("click", async () => {
   const kw = $("disc-kw").value.trim();
   if (!kw) return;
-  if (!token()) { alert("検索の実行には⚙️の初回設定（トークン）が必要です"); $("admin").classList.add("open"); return; }
+  if (!token()) {
+    $("admin").classList.add("open");
+    renderAdmin();
+    $("admin").scrollIntoView({ behavior: "smooth" });
+    status("⬇ 検索を使うには、この初回設定（2分）だけお願いします", true);
+    return;
+  }
   const btn = $("disc-run");
   btn.disabled = true;
   const hint = $("disc-hint");
