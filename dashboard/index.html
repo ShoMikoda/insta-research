@@ -21,18 +21,23 @@
     background: var(--bg); color: var(--text);
     max-width: 640px; margin: 0 auto; padding: 16px 14px 60px;
   }
-  header { padding: 18px 4px 10px; }
+  header { padding: 18px 4px 10px; display: flex; align-items: flex-start; gap: 8px; }
+  header > div { flex: 1; }
   h1 { font-size: 20px; letter-spacing: .02em; }
   #date { color: var(--sub); font-size: 12px; margin-top: 4px; }
-  nav {
-    display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px;
+  .gear {
+    border: 1px solid var(--border); background: var(--card); border-radius: 10px;
+    font-size: 16px; padding: 6px 10px; cursor: pointer;
   }
-  nav button {
+  nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+  nav button, .sort-tabs button {
     border: 1px solid var(--border); background: var(--card); color: var(--sub);
     border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 600;
     cursor: pointer;
   }
-  nav button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  nav button.active, .sort-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .sort-tabs { display: flex; gap: 6px; margin: 0 4px 10px; }
+  .sort-tabs button { padding: 4px 12px; font-size: 11px; }
   h2 {
     font-size: 14px; color: var(--sub); font-weight: 600;
     margin: 26px 4px 10px; letter-spacing: .06em;
@@ -53,21 +58,84 @@
   .small { font-size: 11px; color: var(--sub); }
   .bio { font-size: 11px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
   .post-cap { font-size: 12px; line-height: 1.55; margin-top: 6px; }
-  .post-meta { font-size: 11px; color: var(--sub); margin-top: 6px; display: flex; gap: 10px; }
+  .post-meta { font-size: 11px; color: var(--sub); margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
   .badge {
     display: inline-block; font-size: 10px; padding: 2px 8px;
     border-radius: 999px; background: #f6ece7; color: var(--accent); font-weight: 600;
   }
   .empty { color: var(--sub); font-size: 12px; padding: 8px 4px; }
+  .spark { display: block; margin-top: 6px; }
   footer { margin-top: 34px; text-align: center; color: var(--sub); font-size: 11px; }
+
+  /* 管理パネル */
+  #admin { display: none; }
+  #admin.open { display: block; }
+  #admin h3 { font-size: 13px; margin: 14px 0 8px; }
+  #admin input[type=text], #admin input[type=password] {
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    font-size: 13px; width: 100%; background: #fffdfa;
+  }
+  .btn {
+    border: none; background: var(--accent); color: #fff; font-weight: 600;
+    border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+  }
+  .btn.sub { background: var(--card); color: var(--sub); border: 1px solid var(--border); }
+  .btn:disabled { opacity: .5; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f4efe8; border-radius: 999px; padding: 4px 6px 4px 12px;
+    font-size: 12px; margin: 3px 4px 3px 0;
+  }
+  .chip button {
+    border: none; background: #ddd5c8; color: #6b6459; border-radius: 50%;
+    width: 18px; height: 18px; font-size: 11px; line-height: 1; cursor: pointer;
+  }
+  .inline { display: flex; gap: 8px; margin-top: 8px; }
+  .inline input { flex: 1; }
+  #adm-status { font-size: 12px; margin-top: 10px; color: var(--accent2); min-height: 1.2em; }
+  .warn { color: var(--accent); }
 </style>
 </head>
 <body>
 <header>
-  <h1 id="title">📊 インスタ リサーチ</h1>
-  <div id="date">読み込み中...</div>
+  <div>
+    <h1 id="title">📊 インスタ リサーチ</h1>
+    <div id="date">読み込み中...</div>
+  </div>
+  <button class="gear" id="gear" title="管理">⚙️</button>
 </header>
 <nav id="tabs"></nav>
+
+<section id="admin" class="card">
+  <div id="adm-token-view">
+    <h3>🔑 初回設定（管理機能を使うにはトークンが必要です）</h3>
+    <div class="small" style="line-height:1.6; margin-bottom:8px;">
+      GitHubのFine-grained personal access token（このリポジトリ限定・Contents/Actions書き込み権限）を貼り付けてください。この端末にのみ保存されます。
+    </div>
+    <div class="inline">
+      <input type="password" id="adm-token" placeholder="github_pat_...">
+      <button class="btn" id="adm-token-save">保存</button>
+    </div>
+  </div>
+  <div id="adm-main" style="display:none;">
+    <div class="row" style="justify-content:space-between;">
+      <h3 style="margin:0;">🔄 データ更新</h3>
+      <button class="btn" id="adm-refresh">今すぐ更新</button>
+    </div>
+    <div class="small">通常は毎朝6時に自動更新。ボタンで即時収集もできます（3〜5分かかります）</div>
+    <h3>📋 ウォッチリスト管理</h3>
+    <div id="adm-cats"></div>
+    <h3>➕ カテゴリ追加</h3>
+    <div class="inline">
+      <input type="text" id="adm-new-id" placeholder="ID(半角英数) 例: biyou" style="max-width:130px;">
+      <input type="text" id="adm-new-name" placeholder="表示名 例: 美容">
+      <input type="text" id="adm-new-icon" placeholder="絵文字" style="max-width:60px;">
+      <button class="btn" id="adm-new-add">追加</button>
+    </div>
+    <div style="margin-top:14px;"><button class="btn sub" id="adm-token-clear">トークン設定を削除</button></div>
+  </div>
+  <div id="adm-status"></div>
+</section>
 
 <h2>👑 フォロワーランキング</h2>
 <div id="followers"></div>
@@ -76,6 +144,11 @@
 <div id="engagement"></div>
 
 <h2>🔥 直近投稿のバズTOP10</h2>
+<div class="sort-tabs" id="buzz-sort">
+  <button data-key="likes" class="active">❤️ いいね順</button>
+  <button data-key="comments">💬 コメント順</button>
+  <button data-key="date">🕐 新着順</button>
+</div>
 <div id="buzz"></div>
 
 <h2>🎬 アカウント別リールランキング</h2>
@@ -84,67 +157,33 @@
 <footer>Bright Data無料枠で毎朝自動更新 / 月額0円運用</footer>
 
 <script>
+const OWNER = "ShoMikoda", REPO = "insta-research";
 const fmt = (n) => n == null ? "-" : n.toLocaleString("ja-JP");
 const pct = (n) => n == null ? "-" : (n * 100).toFixed(1) + "%";
-let categories = [];
+const $ = (id) => document.getElementById(id);
+let categories = [], currentCat = null, currentData = null, buzzKey = "likes";
 
-async function loadCategory(cat) {
-  document.querySelectorAll("nav button").forEach((b) =>
-    b.classList.toggle("active", b.dataset.id === cat.id));
-  document.getElementById("title").textContent = `${cat.icon ?? "📊"} ${cat.name}アカウント リサーチ`;
+/* ---------- 表示系 ---------- */
 
-  let d;
-  try {
-    d = await fetch(`../data/${cat.id}/latest.json`).then((r) => {
-      if (!r.ok) throw new Error("まだデータがありません");
-      return r.json();
-    });
-  } catch (e) {
-    document.getElementById("date").textContent = `「${cat.name}」はまだデータ未収集です。収集後に表示されます。`;
-    ["followers", "engagement", "buzz", "reels"].forEach((id) =>
-      document.getElementById(id).innerHTML = `<div class="empty">データなし</div>`);
-    return;
-  }
+function sparkline(days) {
+  // 直近14日のフォロワー推移をSVG折れ線に
+  const pts = Object.keys(days).sort().slice(-14).map((d) => days[d].followers).filter((v) => v != null);
+  if (pts.length < 2) return "";
+  const min = Math.min(...pts), max = Math.max(...pts), range = max - min || 1;
+  const W = 120, H = 26;
+  const xy = pts.map((v, i) => `${(i / (pts.length - 1)) * W},${H - 3 - ((v - min) / range) * (H - 6)}`).join(" ");
+  const up = pts[pts.length - 1] >= pts[0];
+  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <polyline points="${xy}" fill="none" stroke="${up ? "#7cb8a8" : "#e8927c"}" stroke-width="2" stroke-linejoin="round"/>
+  </svg>`;
+}
 
-  document.getElementById("date").textContent = `${d.date} 更新 / ウォッチ中: ${d.profiles.length}アカウント`;
-  const profiles = d.profiles.filter((p) => p.account);
-
-  // フォロワー増減(前回比)を履歴から計算
-  const delta = {};
-  for (const [name, days] of Object.entries(d.history || {})) {
-    const dates = Object.keys(days).sort();
-    if (dates.length >= 2) {
-      const last = days[dates[dates.length - 1]].followers;
-      const prev = days[dates[dates.length - 2]].followers;
-      if (last != null && prev != null) delta[name] = last - prev;
-    }
-  }
-
-  const followerRank = [...profiles].sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0));
-  document.getElementById("followers").innerHTML = followerRank.map((p, i) => {
-    const dl = delta[p.account];
-    const dTxt = dl == null ? `<span class="small">増減は明日から表示</span>`
-      : dl >= 0 ? `<span class="grow">+${fmt(dl)}</span>` : `<span class="shrink">${fmt(dl)}</span>`;
-    return `<div class="card"><div class="row">
-      <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
-      <div><div class="name"><a href="https://www.instagram.com/${p.account}/" target="_blank">@${p.account}</a></div>
-      <div class="small">投稿 ${fmt(p.posts_count)}件</div></div>
-      <div class="metrics"><div class="big">${fmt(p.followers)}</div><div class="small">${dTxt}</div></div>
-    </div><div class="bio">${(p.biography ?? "").slice(0, 80)}</div></div>`;
-  }).join("") || `<div class="empty">データなし</div>`;
-
-  const engRank = [...profiles].sort((a, b) => (b.avg_engagement ?? 0) - (a.avg_engagement ?? 0));
-  document.getElementById("engagement").innerHTML = engRank.map((p, i) => `
-    <div class="card"><div class="row">
-      <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
-      <div class="name"><a href="https://www.instagram.com/${p.account}/" target="_blank">@${p.account}</a></div>
-      <div class="metrics"><div class="big">${pct(p.avg_engagement)}</div>
-      <div class="small">フォロワー ${fmt(p.followers)}</div></div>
-    </div></div>`).join("") || `<div class="empty">データなし</div>`;
-
+function renderBuzz() {
+  const profiles = (currentData?.profiles ?? []).filter((p) => p.account);
   const posts = profiles.flatMap((p) => (p.posts ?? []).map((x) => ({ ...x, account: p.account })));
-  posts.sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0));
-  document.getElementById("buzz").innerHTML = posts.slice(0, 10).map((x, i) => `
+  const keyFn = buzzKey === "date" ? (x) => x.datetime ?? "" : (x) => x[buzzKey] ?? 0;
+  posts.sort((a, b) => keyFn(b) > keyFn(a) ? 1 : -1);
+  $("buzz").innerHTML = posts.slice(0, 10).map((x, i) => `
     <div class="card">
       <div class="row">
         <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
@@ -159,8 +198,67 @@ async function loadCategory(cat) {
         <a href="${x.url}" target="_blank">投稿を見る →</a>
       </div>
     </div>`).join("") || `<div class="empty">データなし</div>`;
+}
 
-  // アカウント別リールランキング(再生回数があれば再生順、なければいいね順)
+async function loadCategory(cat) {
+  currentCat = cat;
+  document.querySelectorAll("nav button").forEach((b) =>
+    b.classList.toggle("active", b.dataset.id === cat.id));
+  $("title").textContent = `${cat.icon ?? "📊"} ${cat.name}アカウント リサーチ`;
+
+  let d;
+  try {
+    d = await fetch(`../data/${cat.id}/latest.json?t=${Date.now()}`).then((r) => {
+      if (!r.ok) throw new Error("no data");
+      return r.json();
+    });
+  } catch (e) {
+    $("date").textContent = `「${cat.name}」はまだデータ未収集です。次回の収集後に表示されます。`;
+    ["followers", "engagement", "buzz", "reels"].forEach((id) =>
+      $(id).innerHTML = `<div class="empty">データなし</div>`);
+    currentData = null;
+    return;
+  }
+  currentData = d;
+
+  $("date").textContent = `${d.date} 更新 / ウォッチ中: ${d.profiles.length}アカウント`;
+  const profiles = d.profiles.filter((p) => p.account);
+
+  const delta = {};
+  for (const [name, days] of Object.entries(d.history || {})) {
+    const dates = Object.keys(days).sort();
+    if (dates.length >= 2) {
+      const last = days[dates[dates.length - 1]].followers;
+      const prev = days[dates[dates.length - 2]].followers;
+      if (last != null && prev != null) delta[name] = last - prev;
+    }
+  }
+
+  const followerRank = [...profiles].sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0));
+  $("followers").innerHTML = followerRank.map((p, i) => {
+    const dl = delta[p.account];
+    const dTxt = dl == null ? `<span class="small">増減は明日から表示</span>`
+      : dl >= 0 ? `<span class="grow">+${fmt(dl)}</span>` : `<span class="shrink">${fmt(dl)}</span>`;
+    return `<div class="card"><div class="row">
+      <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+      <div><div class="name"><a href="https://www.instagram.com/${p.account}/" target="_blank">@${p.account}</a></div>
+      <div class="small">投稿 ${fmt(p.posts_count)}件</div>
+      ${sparkline(d.history?.[p.account] ?? {})}</div>
+      <div class="metrics"><div class="big">${fmt(p.followers)}</div><div class="small">${dTxt}</div></div>
+    </div><div class="bio">${(p.biography ?? "").slice(0, 80)}</div></div>`;
+  }).join("") || `<div class="empty">データなし</div>`;
+
+  const engRank = [...profiles].sort((a, b) => (b.avg_engagement ?? 0) - (a.avg_engagement ?? 0));
+  $("engagement").innerHTML = engRank.map((p, i) => `
+    <div class="card"><div class="row">
+      <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+      <div class="name"><a href="https://www.instagram.com/${p.account}/" target="_blank">@${p.account}</a></div>
+      <div class="metrics"><div class="big">${pct(p.avg_engagement)}</div>
+      <div class="small">フォロワー ${fmt(p.followers)}</div></div>
+    </div></div>`).join("") || `<div class="empty">データなし</div>`;
+
+  renderBuzz();
+
   const reels = d.reels ?? [];
   const hasPlays = reels.some((r) => r.plays != null);
   const byAccount = {};
@@ -170,7 +268,7 @@ async function loadCategory(cat) {
   }
   const metricLabel = hasPlays ? "再生" : "いいね";
   const sortKey = (r) => (hasPlays ? r.plays ?? 0 : r.likes ?? 0);
-  document.getElementById("reels").innerHTML = Object.entries(byAccount).map(([acc, list]) => {
+  $("reels").innerHTML = Object.entries(byAccount).map(([acc, list]) => {
     list.sort((a, b) => sortKey(b) - sortKey(a));
     const rows = list.slice(0, 5).map((r, i) => `
       <div class="row" style="margin-top:10px; align-items:flex-start;">
@@ -192,29 +290,202 @@ async function loadCategory(cat) {
       ${rows}
     </div>`;
   }).join("") || `<div class="empty">リールデータなし(次回収集から表示されます)</div>`;
-  document.getElementById("reels-note")?.remove();
+  $("reels-note")?.remove();
   if (!hasPlays && reels.length) {
-    document.getElementById("reels").insertAdjacentHTML("beforebegin",
+    $("reels").insertAdjacentHTML("beforebegin",
       `<div class="empty" id="reels-note">※Instagramの仕様で他アカウントの再生回数は非公開のため、いいね数順で表示しています</div>`);
   }
 }
 
-fetch("../config/categories.json")
+/* ---------- 管理系 (GitHub API) ---------- */
+
+const token = () => localStorage.getItem("gh_token");
+
+async function gh(path, opts = {}) {
+  const r = await fetch(`https://api.github.com${path}`, {
+    cache: "no-store",
+    ...opts,
+    headers: {
+      Authorization: `Bearer ${token()}`,
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(opts.headers || {}),
+    },
+  });
+  if (!r.ok) throw new Error(`GitHub API ${r.status}: ${(await r.text()).slice(0, 150)}`);
+  return r.status === 204 ? null : r.json();
+}
+
+function status(msg, warn = false) {
+  const el = $("adm-status");
+  el.textContent = msg;
+  el.className = warn ? "warn" : "";
+}
+
+function renderAdmin() {
+  const has = !!token();
+  $("adm-token-view").style.display = has ? "none" : "block";
+  $("adm-main").style.display = has ? "block" : "none";
+  if (!has) return;
+  $("adm-cats").innerHTML = categories.map((c) => `
+    <div style="margin-bottom:12px;">
+      <div class="small" style="font-weight:700; color:var(--text);">${c.icon ?? ""} ${c.name}
+        <button class="chip" style="border:none; cursor:pointer;" onclick="removeCategory('${c.id}')">カテゴリ削除</button>
+      </div>
+      <div>${c.accounts.map((a) => `<span class="chip">@${a}<button onclick="removeAccount('${c.id}','${a}')">×</button></span>`).join("") || `<span class="small">アカウント未登録</span>`}</div>
+      <div class="inline">
+        <input type="text" id="add-${c.id}" placeholder="ユーザー名を追加 (@不要)">
+        <button class="btn" onclick="addAccount('${c.id}')">追加</button>
+      </div>
+    </div>`).join("");
+}
+
+async function saveCategories(message) {
+  const f = await gh(`/repos/${OWNER}/${REPO}/contents/config/categories.json?ref=main`);
+  const obj = JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g, "")))));
+  obj.categories = categories;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2) + "\n")));
+  await gh(`/repos/${OWNER}/${REPO}/contents/config/categories.json`, {
+    method: "PUT",
+    body: JSON.stringify({ message, content, sha: f.sha, branch: "main" }),
+  });
+}
+
+async function afterConfigChange(msg) {
+  try {
+    status("保存中...");
+    await saveCategories(msg);
+    renderAdmin();
+    renderTabs();
+    status(`保存しました。反映は次回収集後（「今すぐ更新」で即反映できます）`);
+  } catch (e) {
+    status("保存に失敗: " + e.message, true);
+  }
+}
+
+window.addAccount = (catId) => {
+  const input = $(`add-${catId}`);
+  const name = input.value.trim().replace(/^@/, "").replace(/\/+$/, "");
+  if (!name) return;
+  const cat = categories.find((c) => c.id === catId);
+  if (cat.accounts.includes(name)) { status("既に登録済みです", true); return; }
+  cat.accounts.push(name);
+  afterConfigChange(`config: ${cat.name}に @${name} を追加`);
+};
+
+window.removeAccount = (catId, name) => {
+  if (!confirm(`@${name} をウォッチリストから削除しますか？`)) return;
+  const cat = categories.find((c) => c.id === catId);
+  cat.accounts = cat.accounts.filter((a) => a !== name);
+  afterConfigChange(`config: ${cat.name}から @${name} を削除`);
+};
+
+window.removeCategory = (catId) => {
+  const cat = categories.find((c) => c.id === catId);
+  if (!confirm(`カテゴリ「${cat.name}」を削除しますか？(収集済みデータは残ります)`)) return;
+  categories = categories.filter((c) => c.id !== catId);
+  afterConfigChange(`config: カテゴリ「${cat.name}」を削除`);
+};
+
+$("adm-new-add").addEventListener("click", () => {
+  const id = $("adm-new-id").value.trim();
+  const name = $("adm-new-name").value.trim();
+  const icon = $("adm-new-icon").value.trim() || "📊";
+  if (!/^[a-z0-9_-]+$/.test(id)) { status("IDは半角英数(小文字)で入力してください", true); return; }
+  if (!name) { status("表示名を入力してください", true); return; }
+  if (categories.some((c) => c.id === id)) { status("そのIDは使用済みです", true); return; }
+  categories.push({ id, name, icon, accounts: [], hashtags: [] });
+  ["adm-new-id", "adm-new-name", "adm-new-icon"].forEach((i) => $(i).value = "");
+  afterConfigChange(`config: カテゴリ「${name}」を追加`);
+});
+
+$("adm-refresh").addEventListener("click", async () => {
+  const btn = $("adm-refresh");
+  btn.disabled = true;
+  try {
+    status("収集を開始しています...");
+    await gh(`/repos/${OWNER}/${REPO}/actions/workflows/collect.yml/dispatches`, {
+      method: "POST",
+      body: JSON.stringify({ ref: "main" }),
+    });
+    await new Promise((r) => setTimeout(r, 8000));
+    const runs = await gh(`/repos/${OWNER}/${REPO}/actions/runs?per_page=1&event=workflow_dispatch`);
+    const runId = runs.workflow_runs?.[0]?.id;
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 10000));
+      const run = await gh(`/repos/${OWNER}/${REPO}/actions/runs/${runId}`);
+      status(`収集中... (${Math.round((i + 1) / 6 * 10) / 10}分経過)`);
+      if (run.status === "completed") {
+        if (run.conclusion !== "success") throw new Error("収集ジョブが失敗しました");
+        break;
+      }
+    }
+    status("収集完了。サイトに反映中です(約1分)...");
+    await new Promise((r) => setTimeout(r, 70000));
+    status("更新完了！最新データを読み込みます");
+    await loadCategory(currentCat);
+  } catch (e) {
+    status("更新に失敗: " + e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$("adm-token-save").addEventListener("click", async () => {
+  const t = $("adm-token").value.trim();
+  if (!t) return;
+  localStorage.setItem("gh_token", t);
+  try {
+    await gh(`/repos/${OWNER}/${REPO}`);
+    status("トークンを確認・保存しました");
+    renderAdmin();
+  } catch (e) {
+    localStorage.removeItem("gh_token");
+    status("トークンが無効です: " + e.message, true);
+  }
+});
+
+$("adm-token-clear").addEventListener("click", () => {
+  localStorage.removeItem("gh_token");
+  renderAdmin();
+  status("トークン設定を削除しました");
+});
+
+$("gear").addEventListener("click", () => {
+  $("admin").classList.toggle("open");
+  renderAdmin();
+});
+
+$("buzz-sort").addEventListener("click", (e) => {
+  const key = e.target.dataset?.key;
+  if (!key) return;
+  buzzKey = key;
+  document.querySelectorAll("#buzz-sort button").forEach((b) =>
+    b.classList.toggle("active", b.dataset.key === key));
+  renderBuzz();
+});
+
+/* ---------- 起動 ---------- */
+
+function renderTabs() {
+  $("tabs").innerHTML = categories.map((c) =>
+    `<button data-id="${c.id}">${c.icon ?? ""} ${c.name}</button>`).join("");
+}
+
+fetch(`../config/categories.json?t=${Date.now()}`)
   .then((r) => r.json())
-  .then(({ categories: cats }) => {
-    categories = cats;
-    const nav = document.getElementById("tabs");
-    nav.innerHTML = cats.map((c) =>
-      `<button data-id="${c.id}">${c.icon ?? ""} ${c.name}</button>`).join("");
-    nav.addEventListener("click", (e) => {
+  .then((cfg) => {
+    categories = cfg.categories;
+    renderTabs();
+    $("tabs").addEventListener("click", (e) => {
       const id = e.target.dataset?.id;
-      if (id) loadCategory(cats.find((c) => c.id === id));
+      if (id) loadCategory(categories.find((c) => c.id === id));
     });
     const initial = new URLSearchParams(location.search).get("cat");
-    loadCategory(cats.find((c) => c.id === initial) ?? cats[0]);
+    loadCategory(categories.find((c) => c.id === initial) ?? categories[0]);
   })
   .catch((e) => {
-    document.getElementById("date").textContent = "カテゴリ設定の読み込みに失敗: " + e.message;
+    $("date").textContent = "カテゴリ設定の読み込みに失敗: " + e.message;
   });
 </script>
 </body>
