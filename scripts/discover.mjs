@@ -115,6 +115,19 @@ const accounts = profiles
     posts_count: p.posts_count ?? null,
     biography: (p.biography ?? "").slice(0, 120),
     is_verified: p.is_verified ?? false,
+    // バズ投稿TOP3(直近投稿のいいね順・追加コストなし)
+    top_posts: (p.posts ?? [])
+      .filter((x) => x.likes != null)
+      .sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
+      .slice(0, 3)
+      .map((x) => ({
+        caption: (x.caption ?? "").slice(0, 90),
+        likes: x.likes,
+        comments: x.comments ?? null,
+        url: x.url,
+        date: (x.datetime ?? "").slice(0, 10),
+        is_video: x.content_type === "Video",
+      })),
   }))
   .sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0));
 

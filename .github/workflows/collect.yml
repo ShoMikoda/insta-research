@@ -1,8 +1,6 @@
-name: 毎朝のデータ収集
+name: データ収集（手動）
 
 on:
-  schedule:
-    - cron: "0 21 * * *" # 毎朝6:00 JST
   workflow_dispatch: {}
 
 permissions:

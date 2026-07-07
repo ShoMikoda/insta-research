@@ -122,7 +122,7 @@
       <h3 style="margin:0;">🔄 データ更新</h3>
       <button class="btn" id="adm-refresh">今すぐ更新</button>
     </div>
-    <div class="small">通常は毎朝6時に自動更新。ボタンで即時収集もできます（3〜5分かかります）</div>
+    <div class="small">自動収集は停止中（調べたいときだけ使う方式）。このボタンでウォッチリストの最新データを収集します（3〜5分）</div>
     <h3>📋 ウォッチリスト管理</h3>
     <div id="adm-cats"></div>
     <h3>➕ カテゴリ追加</h3>
@@ -165,7 +165,7 @@
 <h2>🎬 アカウント別リールランキング</h2>
 <div id="reels"></div>
 
-<footer>Bright Data無料枠で毎朝自動更新 / 月額0円運用</footer>
+<footer>Bright Data無料枠で月額0円運用 / 調べたいときに検索・更新</footer>
 
 <script>
 const OWNER = "ShoMikoda", REPO = "insta-research";
@@ -478,7 +478,7 @@ async function loadDiscoverHistory() {
     `<span class="chip" style="cursor:pointer;" onclick="showDiscover('${s.slug}')">🔍 ${s.keyword} <span class="small">(${s.date}・${s.count}件)</span></span>`
   ).join("") || `<span class="small">検索履歴はまだありません</span>`;
   $("disc-hint").textContent = token()
-    ? "キーワードでそのジャンルのアカウントを発掘できます（1回3〜5分・月25回目安）"
+    ? "キーワードでそのジャンルのアカウントとバズ投稿を発掘（1回3〜5分・月300回目安）"
     : "検索の実行には⚙️の初回設定（トークン）が必要です。過去の検索結果は誰でも見られます";
   return index;
 }
@@ -500,15 +500,31 @@ window.showDiscover = async (slug) => {
         <select id="disc-cat" style="border:1px solid var(--border); border-radius:8px; padding:6px; background:#fffdfa; font-size:12px;">${catOptions}</select>
       </div>
       ${d.accounts.map((a, i) => `
-        <div class="row" style="margin-top:10px; align-items:flex-start;">
-          <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
-          <div style="flex:1; min-width:0;">
-            <div class="name"><a href="https://www.instagram.com/${a.account}/" target="_blank">@${a.account}</a>
-            ${a.is_verified ? "✅" : ""}</div>
-            <div class="small">フォロワー ${fmt(a.followers)} / 投稿 ${fmt(a.posts_count)} / エンゲージ ${pct(a.avg_engagement)}</div>
-            <div class="bio" style="margin-top:2px;">${a.biography ?? ""}</div>
+        <div class="card" style="margin-top:10px; background:#fffdfa;">
+          <div class="row" style="align-items:flex-start;">
+            <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+            <div style="flex:1; min-width:0;">
+              <div class="name"><a href="https://www.instagram.com/${a.account}/" target="_blank">@${a.account}</a>
+              ${a.is_verified ? "✅" : ""}</div>
+              <div class="small">フォロワー ${fmt(a.followers)} / 投稿 ${fmt(a.posts_count)} / エンゲージ ${pct(a.avg_engagement)}</div>
+              <div class="bio" style="margin-top:2px;">${a.biography ?? ""}</div>
+            </div>
+            <button class="btn" style="padding:5px 10px; font-size:11px;" onclick="discAdd('${a.account}')">追加</button>
           </div>
-          <button class="btn" style="padding:5px 10px; font-size:11px;" onclick="discAdd('${a.account}')">追加</button>
+          ${(a.top_posts ?? []).map((x, j) => `
+            <div class="row" style="margin-top:8px; align-items:flex-start;">
+              <div class="rank" style="font-size:11px;">🔥${j + 1}</div>
+              <div style="flex:1; min-width:0;">
+                <div class="post-cap" style="margin-top:0;">${x.caption}${x.caption?.length >= 90 ? "…" : ""}</div>
+                <div class="post-meta">
+                  <span>❤️ ${fmt(x.likes)}</span>
+                  <span>💬 ${fmt(x.comments)}</span>
+                  ${x.is_video ? `<span class="badge">リール/動画</span>` : ""}
+                  <span>${x.date ?? ""}</span>
+                  <a href="${x.url}" target="_blank">見る →</a>
+                </div>
+              </div>
+            </div>`).join("")}
         </div>`).join("") || `<div class="empty">アカウントが見つかりませんでした</div>`}
     </div>`;
 };
