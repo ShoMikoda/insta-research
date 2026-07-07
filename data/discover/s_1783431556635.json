@@ -1,0 +1,75 @@
+{
+  "keyword": "AI関連",
+  "slug": "s_1783431556635",
+  "date": "2026-07-07",
+  "accounts": [
+    {
+      "account": "urata_hayao",
+      "followers": 11550,
+      "avg_engagement": 0.0312,
+      "posts_count": 32,
+      "biography": "こんにちは！\nHAYABUSA Inc. 代表取締役CEO 浦田駿です。\n慶應義塾大学修士2026卒です。\n認識特化AIからPhysicalへ。最終的に宇宙に行きます。お仕事のご依頼はDMまで(AI関連でしたら、ご相談は無料でお受けいたしま",
+      "is_verified": false,
+      "top_posts": [
+        {
+          "caption": "中国上陸！",
+          "likes": 669,
+          "comments": 5,
+          "url": "https://www.instagram.com/p/DJPKW6fPkbO",
+          "date": "2025-05-04",
+          "is_video": false
+        },
+        {
+          "caption": "ヤンニョム",
+          "likes": 497,
+          "comments": 1,
+          "url": "https://www.instagram.com/p/DX4Rlfjkbnj",
+          "date": "2026-05-03",
+          "is_video": false
+        },
+        {
+          "caption": "お肉",
+          "likes": 404,
+          "comments": null,
+          "url": "https://www.instagram.com/p/DUfaj3tkb0Y",
+          "date": "2026-02-08",
+          "is_video": false
+        }
+      ]
+    },
+    {
+      "account": "cocona_ai_school",
+      "followers": 8928,
+      "avg_engagement": 0.0886,
+      "posts_count": 34,
+      "biography": "＼だるい仕事はAIに丸投げ／\nYouTube登録者8万人 ｜0からAI使いこなす発信｜コピペで使えるプロンプト｜Google関連AI・ClaudeCode/Codexを使った自動化が好き｜年商1~2億規模のAIスクール講師・toB向けAI研",
+      "is_verified": false,
+      "top_posts": [
+        {
+          "caption": ".\n最後まで見てね🤫\n\nGoogle AI studioの資料プレゼントします\nキーワード入力して受け取ってね💓\n\nもっと詳しくAIのこと知りたい方は\nプロフィールのリンクから",
+          "likes": 2355,
+          "comments": 719,
+          "url": "https://www.instagram.com/p/DVf1uFUkcKS",
+          "date": "2026-03-05",
+          "is_video": true
+        },
+        {
+          "caption": "今日から使うべし😎",
+          "likes": 2309,
+          "comments": 236,
+          "url": "https://www.instagram.com/p/DZAAEDCx9TR",
+          "date": "2026-05-31",
+          "is_video": true
+        },
+        {
+          "caption": "Claude x YouTube =🔥",
+          "likes": 664,
+          "comments": 289,
+          "url": "https://www.instagram.com/p/DaFMqd4RIWv",
+          "date": "2026-06-27",
+          "is_video": true
+        }
+      ]
+    }
+  ]
+}
