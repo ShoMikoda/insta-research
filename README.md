@@ -12,7 +12,7 @@
 
 ## 仕組み
 
-- **検索**: Google Custom Search API（無料100回/日）で instagram.com 内をキーワード検索
+- **検索**: DuckDuckGo等の無料検索で instagram.com 内をキーワード検索（追加のAPIキー不要）
 - **データ取得**: Bright Data無料枠（月5,000レコード、毎月更新）
 - **実行**: GitHub Actions（画面のボタンから手動起動のみ）
 - **保存**: このリポジトリの `data/` にJSON蓄積
@@ -25,8 +25,8 @@
 
 ## セットアップ（管理者）
 
-1. GitHub Secretsに登録: `BRIGHTDATA_API_KEY`, `GOOGLE_CSE_KEY`, `GOOGLE_CSE_CX`
-2. アプリの⚙️にFine-grained PAT（このリポジトリ限定・Contents/Actions RW）を設定
+1. GitHub Secretsに登録: `BRIGHTDATA_API_KEY`
+2. アプリの⚙️にアクセストークン（repo/workflow権限）を設定
 
 ## 制限事項
 

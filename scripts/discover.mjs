@@ -7,10 +7,6 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-
-const run = promisify(execFile);
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const API_KEY = process.env.BRIGHTDATA_API_KEY;
@@ -22,7 +18,7 @@ if (!API_KEY || !keyword) {
 
 const bd = JSON.parse(readFileSync(join(ROOT, "config/brightdata.json"), "utf8"));
 const HEADERS = { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" };
-const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 // Instagramのユーザー名として無効なパス
 const RESERVED = new Set(["p", "reel", "reels", "explore", "tags", "stories", "tv",
@@ -35,37 +31,41 @@ function extractNames(text, names) {
   }
 }
 
+async function fetchText(url) {
+  const r = await fetch(url, {
+    headers: { "User-Agent": UA, "Accept-Language": "ja,en;q=0.9", "Accept": "text/html" },
+    redirect: "follow",
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.text();
+}
+
 async function searchCandidates(kw) {
   // デバッグ用: 検索ステップを飛ばして候補を直接指定
   if (process.env.DISCOVER_TEST_CANDIDATES) {
     return process.env.DISCOVER_TEST_CANDIDATES.split(",").map((s) => s.trim()).filter(Boolean);
   }
-  const names = new Set();
-  const CSE_KEY = process.env.GOOGLE_CSE_KEY;
-  const CSE_CX = process.env.GOOGLE_CSE_CX;
-
-  if (CSE_KEY && CSE_CX) {
-    // 本命: Google Custom Search JSON API (無料100回/日)
-    for (const start of [1, 11]) {
-      const u = `https://www.googleapis.com/customsearch/v1?key=${CSE_KEY}&cx=${CSE_CX}` +
-        `&q=${encodeURIComponent(`site:instagram.com ${kw}`)}&num=10&start=${start}&gl=jp&hl=ja`;
-      const r = await fetch(u);
-      if (!r.ok) throw new Error(`Google検索APIエラー (HTTP ${r.status}): ${(await r.text()).slice(0, 150)}`);
-      const j = await r.json();
-      for (const item of j.items ?? []) extractNames(item.link ?? "", names);
-      if (!j.queries?.nextPage) break;
+  const q = `site:instagram.com ${kw}`;
+  // 複数の無料検索エンジンを順に試す(GitHub Actionsから動作確認済み: html.duckduckgo, brave)
+  const engines = [
+    ["DuckDuckGo", `https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`],
+    ["DuckDuckGo(lite)", `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(q)}`],
+    ["Brave", `https://search.brave.com/search?q=${encodeURIComponent(q)}`],
+  ];
+  for (const [name, url] of engines) {
+    try {
+      const html = await fetchText(url);
+      const names = new Set();
+      extractNames(html, names);
+      if (names.size > 0) {
+        console.log(`検索エンジン: ${name} (${names.size}件ヒット)`);
+        return [...names].slice(0, 15);
+      }
+    } catch (e) {
+      console.log(`${name} は失敗(${e.message})、次を試します`);
     }
-  } else {
-    // 予備: DuckDuckGo (bot検知で失敗することがある)
-    console.log("GOOGLE_CSE_KEY未設定のためDuckDuckGoで検索します(不安定な場合があります)");
-    const q = encodeURIComponent(`site:instagram.com ${kw}`);
-    const { stdout: html } = await run("curl", [
-      "-s", `https://lite.duckduckgo.com/lite/?q=${q}`,
-      "-H", `User-Agent: ${UA}`,
-    ], { maxBuffer: 10 * 1024 * 1024 });
-    extractNames(html, names);
   }
-  return [...names].slice(0, 15);
+  return [];
 }
 
 async function triggerAndWait(datasetId, inputs) {

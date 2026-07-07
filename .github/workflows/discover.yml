@@ -22,8 +22,6 @@ jobs:
       - name: アカウント発掘
         env:
           BRIGHTDATA_API_KEY: ${{ secrets.BRIGHTDATA_API_KEY }}
-          GOOGLE_CSE_KEY: ${{ secrets.GOOGLE_CSE_KEY }}
-          GOOGLE_CSE_CX: ${{ secrets.GOOGLE_CSE_CX }}
           KEYWORD: ${{ inputs.keyword }}
         run: node scripts/discover.mjs "$KEYWORD"
       - name: 結果をコミット
