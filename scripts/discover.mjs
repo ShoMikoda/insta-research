@@ -46,26 +46,24 @@ async function searchCandidates(kw) {
     return process.env.DISCOVER_TEST_CANDIDATES.split(",").map((s) => s.trim()).filter(Boolean);
   }
   const q = `site:instagram.com ${kw}`;
-  // 複数の無料検索エンジンを順に試す(GitHub Actionsから動作確認済み: html.duckduckgo, brave)
+  // 複数の無料検索エンジンの結果を統合して候補を増やす(GitHub Actionsから動作確認済み)
   const engines = [
     ["DuckDuckGo", `https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`],
-    ["DuckDuckGo(lite)", `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(q)}`],
     ["Brave", `https://search.brave.com/search?q=${encodeURIComponent(q)}`],
+    ["DuckDuckGo(lite)", `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(q)}`],
   ];
+  const names = new Set();
   for (const [name, url] of engines) {
+    if (names.size >= 20) break;
     try {
-      const html = await fetchText(url);
-      const names = new Set();
-      extractNames(html, names);
-      if (names.size > 0) {
-        console.log(`検索エンジン: ${name} (${names.size}件ヒット)`);
-        return [...names].slice(0, 15);
-      }
+      const before = names.size;
+      extractNames(await fetchText(url), names);
+      console.log(`検索エンジン ${name}: +${names.size - before}件 (計${names.size}件)`);
     } catch (e) {
       console.log(`${name} は失敗(${e.message})、次を試します`);
     }
   }
-  return [];
+  return [...names].slice(0, 20);
 }
 
 async function triggerAndWait(datasetId, inputs) {

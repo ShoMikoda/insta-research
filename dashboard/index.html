@@ -121,6 +121,7 @@
   <div class="inline">
     <input type="text" id="kw" placeholder="キーワード（例: スニーカー、車、キャンプ）">
     <button class="btn" id="run">検索</button>
+    <button class="btn sub" id="cancel" style="display:none;">停止</button>
   </div>
   <div id="status"></div>
 </div>
@@ -139,6 +140,7 @@ const pct = (n) => n == null ? "-" : (n * 100).toFixed(1) + "%";
 const $ = (id) => document.getElementById(id);
 const token = () => localStorage.getItem("gh_token");
 let currentSlug = null, sortMode = "followers";
+let currentRunId = null, cancelRequested = false;
 
 function status(msg, warn = false) {
   $("status").textContent = msg;
@@ -189,7 +191,7 @@ async function loadHistory(activeSlug) {
   try {
     index = await fetch(`../data/discover/index.json?t=${Date.now()}`).then((r) => r.ok ? r.json() : []);
   } catch (e) { /* なし */ }
-  $("history").innerHTML = index.slice(0, 15).map((s) =>
+  $("history").innerHTML = index.map((s) =>
     `<button class="chip ${s.slug === activeSlug ? "active" : ""}" onclick="showResult('${s.slug}')">${s.keyword} <span style="font-weight:400;">(${s.date})</span></button>`
   ).join("") || `<span class="empty">まだ検索していません。上の検索ボックスからどうぞ</span>`;
   return index;
@@ -218,6 +220,7 @@ window.showResult = async (slug) => {
       <button class="${sortMode === "followers" ? "active" : ""}" onclick="setSort('followers')">👑 フォロワー順</button>
       <button class="${sortMode === "buzz" ? "active" : ""}" onclick="setSort('buzz')">🔥 バズ投稿順</button>
     </div>
+    <div class="small" style="margin:6px 4px 0;">🔥バズ投稿順＝直近投稿の最高いいね数が大きい順（リール再生回数はInstagramが非公開のため、いいね数でバズを判定しています）</div>
     ${accounts.map((a, i) => `
       <div class="card">
         <div class="row" style="align-items:flex-start;">
@@ -263,6 +266,9 @@ $("run").addEventListener("click", async () => {
   }
   const btn = $("run");
   btn.disabled = true;
+  $("cancel").style.display = "inline-block";
+  cancelRequested = false;
+  currentRunId = null;
   try {
     status("検索を開始しています...");
     await gh(`/repos/${OWNER}/${REPO}/actions/workflows/discover.yml/dispatches`, {
@@ -271,12 +277,16 @@ $("run").addEventListener("click", async () => {
     });
     await new Promise((r) => setTimeout(r, 8000));
     const runs = await gh(`/repos/${OWNER}/${REPO}/actions/runs?per_page=1&event=workflow_dispatch`);
-    const runId = runs.workflow_runs?.[0]?.id;
+    currentRunId = runs.workflow_runs?.[0]?.id;
+    if (cancelRequested) {
+      await gh(`/repos/${OWNER}/${REPO}/actions/runs/${currentRunId}/cancel`, { method: "POST" }).catch(() => {});
+    }
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 10000));
-      const run = await gh(`/repos/${OWNER}/${REPO}/actions/runs/${runId}`);
+      const run = await gh(`/repos/${OWNER}/${REPO}/actions/runs/${currentRunId}`);
       status(`「${kw}」をリサーチ中... (約${Math.round((i + 1) / 6 * 10) / 10}分経過。3〜5分かかります)`);
       if (run.status === "completed") {
+        if (run.conclusion === "cancelled") { status("検索を停止しました"); return; }
         if (run.conclusion !== "success") throw new Error("検索に失敗しました。キーワードを変えてお試しください");
         break;
       }
@@ -291,6 +301,18 @@ $("run").addEventListener("click", async () => {
     status(e.message, true);
   } finally {
     btn.disabled = false;
+    $("cancel").style.display = "none";
+    currentRunId = null;
+  }
+});
+
+$("cancel").addEventListener("click", async () => {
+  cancelRequested = true;
+  status("停止しています...");
+  if (currentRunId) {
+    try {
+      await gh(`/repos/${OWNER}/${REPO}/actions/runs/${currentRunId}/cancel`, { method: "POST" });
+    } catch (e) { /* 既に終了している場合など */ }
   }
 });
 
