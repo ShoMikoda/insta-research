@@ -137,6 +137,17 @@
   <div id="adm-status"></div>
 </section>
 
+<h2>🔍 アカウント発掘（キーワード検索）</h2>
+<div class="card" id="discover">
+  <div class="inline" style="margin-top:0;">
+    <input type="text" id="disc-kw" placeholder="例: スニーカー、車、キャンプ">
+    <button class="btn" id="disc-run">検索</button>
+  </div>
+  <div class="small" id="disc-hint" style="margin-top:6px;"></div>
+  <div id="disc-history" style="margin-top:8px;"></div>
+  <div id="disc-result"></div>
+</div>
+
 <h2>👑 フォロワーランキング</h2>
 <div id="followers"></div>
 
@@ -456,6 +467,99 @@ $("gear").addEventListener("click", () => {
   renderAdmin();
 });
 
+/* ---------- アカウント発掘 ---------- */
+
+async function loadDiscoverHistory() {
+  let index = [];
+  try {
+    index = await fetch(`../data/discover/index.json?t=${Date.now()}`).then((r) => r.ok ? r.json() : []);
+  } catch (e) { /* まだ検索履歴なし */ }
+  $("disc-history").innerHTML = index.slice(0, 10).map((s) =>
+    `<span class="chip" style="cursor:pointer;" onclick="showDiscover('${s.slug}')">🔍 ${s.keyword} <span class="small">(${s.date}・${s.count}件)</span></span>`
+  ).join("") || `<span class="small">検索履歴はまだありません</span>`;
+  $("disc-hint").textContent = token()
+    ? "キーワードでそのジャンルのアカウントを発掘できます（1回3〜5分・月25回目安）"
+    : "検索の実行には⚙️の初回設定（トークン）が必要です。過去の検索結果は誰でも見られます";
+  return index;
+}
+
+window.showDiscover = async (slug) => {
+  let d;
+  try {
+    d = await fetch(`../data/discover/${slug}.json?t=${Date.now()}`).then((r) => r.json());
+  } catch (e) {
+    $("disc-result").innerHTML = `<div class="empty">結果の読み込みに失敗しました</div>`;
+    return;
+  }
+  const catOptions = categories.map((c) => `<option value="${c.id}">${c.icon ?? ""} ${c.name}</option>`).join("");
+  $("disc-result").innerHTML = `
+    <div style="margin-top:12px;">
+      <div class="name">「${d.keyword}」の発掘結果 <span class="small">(${d.date})</span></div>
+      <div class="inline" style="align-items:center;">
+        <span class="small">追加先:</span>
+        <select id="disc-cat" style="border:1px solid var(--border); border-radius:8px; padding:6px; background:#fffdfa; font-size:12px;">${catOptions}</select>
+      </div>
+      ${d.accounts.map((a, i) => `
+        <div class="row" style="margin-top:10px; align-items:flex-start;">
+          <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+          <div style="flex:1; min-width:0;">
+            <div class="name"><a href="https://www.instagram.com/${a.account}/" target="_blank">@${a.account}</a>
+            ${a.is_verified ? "✅" : ""}</div>
+            <div class="small">フォロワー ${fmt(a.followers)} / 投稿 ${fmt(a.posts_count)} / エンゲージ ${pct(a.avg_engagement)}</div>
+            <div class="bio" style="margin-top:2px;">${a.biography ?? ""}</div>
+          </div>
+          <button class="btn" style="padding:5px 10px; font-size:11px;" onclick="discAdd('${a.account}')">追加</button>
+        </div>`).join("") || `<div class="empty">アカウントが見つかりませんでした</div>`}
+    </div>`;
+};
+
+window.discAdd = (name) => {
+  if (!token()) { alert("追加には⚙️の初回設定（トークン）が必要です"); return; }
+  const catId = $("disc-cat").value;
+  const cat = categories.find((c) => c.id === catId);
+  if (cat.accounts.includes(name)) { status(`@${name} は既に「${cat.name}」に登録済みです`, true); $("admin").classList.add("open"); return; }
+  cat.accounts.push(name);
+  $("admin").classList.add("open");
+  afterConfigChange(`config: ${cat.name}に @${name} を追加(発掘から)`);
+};
+
+$("disc-run").addEventListener("click", async () => {
+  const kw = $("disc-kw").value.trim();
+  if (!kw) return;
+  if (!token()) { alert("検索の実行には⚙️の初回設定（トークン）が必要です"); $("admin").classList.add("open"); return; }
+  const btn = $("disc-run");
+  btn.disabled = true;
+  const hint = $("disc-hint");
+  try {
+    hint.textContent = "検索を開始しています...";
+    await gh(`/repos/${OWNER}/${REPO}/actions/workflows/discover.yml/dispatches`, {
+      method: "POST",
+      body: JSON.stringify({ ref: "main", inputs: { keyword: kw } }),
+    });
+    await new Promise((r) => setTimeout(r, 8000));
+    const runs = await gh(`/repos/${OWNER}/${REPO}/actions/runs?per_page=1&event=workflow_dispatch`);
+    const runId = runs.workflow_runs?.[0]?.id;
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 10000));
+      const run = await gh(`/repos/${OWNER}/${REPO}/actions/runs/${runId}`);
+      hint.textContent = `「${kw}」を発掘中... (約${Math.round((i + 1) / 6 * 10) / 10}分経過)`;
+      if (run.status === "completed") {
+        if (run.conclusion !== "success") throw new Error("検索ジョブが失敗しました(キーワードを変えてお試しください)");
+        break;
+      }
+    }
+    hint.textContent = "検索完了。結果を反映中(約1分)...";
+    await new Promise((r) => setTimeout(r, 70000));
+    const index = await loadDiscoverHistory();
+    if (index[0]) showDiscover(index[0].slug);
+    hint.textContent = "発掘完了！";
+  } catch (e) {
+    hint.textContent = "検索に失敗: " + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 $("buzz-sort").addEventListener("click", (e) => {
   const key = e.target.dataset?.key;
   if (!key) return;
@@ -483,6 +587,7 @@ fetch(`../config/categories.json?t=${Date.now()}`)
     });
     const initial = new URLSearchParams(location.search).get("cat");
     loadCategory(categories.find((c) => c.id === initial) ?? categories[0]);
+    loadDiscoverHistory();
   })
   .catch((e) => {
     $("date").textContent = "カテゴリ設定の読み込みに失敗: " + e.message;
