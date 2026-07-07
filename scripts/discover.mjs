@@ -4,7 +4,7 @@
 // Bright Data Profilesスクレイパーで詳細(フォロワー数等)を取得してランキング化。
 // 使い方: BRIGHTDATA_API_KEY=xxx node scripts/discover.mjs "スニーカー"
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -66,8 +66,8 @@ async function searchCandidates(kw) {
   return [...names].slice(0, 20);
 }
 
-async function triggerAndWait(datasetId, inputs) {
-  const url = `${bd.api_base}/trigger?dataset_id=${datasetId}&include_errors=true`;
+async function triggerAndWait(datasetId, inputs, extraParams = "") {
+  const url = `${bd.api_base}/trigger?dataset_id=${datasetId}&include_errors=true${extraParams}`;
   const res = await fetch(url, { method: "POST", headers: HEADERS, body: JSON.stringify(inputs) });
   if (!res.ok) throw new Error(`trigger失敗 ${res.status}: ${await res.text()}`);
   const { snapshot_id } = await res.json();
@@ -129,17 +129,61 @@ const accounts = profiles
   }))
   .sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0));
 
+// 上位アカウントは直近の投稿を深掘りして、いいね上位のバズ投稿を抽出する
+const POSTS_DEPTH = 20, DEEP_ACCOUNTS = 10;
+const deep = accounts.slice(0, DEEP_ACCOUNTS);
+if (deep.length) {
+  console.log(`上位${deep.length}アカウントの直近${POSTS_DEPTH}投稿を取得中...`);
+  try {
+    const postInputs = deep.map((a) => ({
+      url: `https://www.instagram.com/${a.account}/`,
+      num_of_posts: POSTS_DEPTH,
+    }));
+    const posts = await triggerAndWait(bd.datasets.posts, postInputs, "&type=discover_new&discover_by=url");
+    const byUser = {};
+    for (const p of posts) {
+      const u = p.user_posted ?? p.account;
+      if (!u || p.error) continue;
+      (byUser[u] ??= []).push(p);
+    }
+    for (const a of deep) {
+      const list = byUser[a.account];
+      if (!list?.length) continue;
+      a.top_posts = list
+        .filter((x) => x.likes != null)
+        .sort((x, y) => (y.likes ?? 0) - (x.likes ?? 0))
+        .slice(0, 3)
+        .map((x) => ({
+          caption: ((x.description ?? x.caption) ?? "").slice(0, 90),
+          likes: x.likes,
+          comments: x.num_comments ?? x.comments ?? null,
+          url: x.url,
+          date: ((x.date_posted ?? x.datetime) ?? "").slice(0, 10),
+          is_video: x.content_type === "Video" || x.product_type === "clips",
+        }));
+      a.posts_scanned = POSTS_DEPTH;
+    }
+  } catch (e) {
+    console.error(`投稿の深掘りに失敗(プロフィール付属の直近投稿で代替します): ${e.message}`);
+  }
+}
+
 const now = new Date();
 const slug = `s_${now.getTime()}`;
 const dir = join(ROOT, "data", "discover");
 mkdirSync(dir, { recursive: true });
 writeFileSync(join(dir, `${slug}.json`), JSON.stringify({
-  keyword, slug, date: now.toISOString().slice(0, 10), accounts,
+  keyword, slug, date: now.toISOString().slice(0, 10), posts_depth: POSTS_DEPTH, accounts,
 }, null, 2));
 
 const indexPath = join(dir, "index.json");
 const index = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, "utf8")) : [];
 index.unshift({ slug, keyword, date: now.toISOString().slice(0, 10), count: accounts.length });
-writeFileSync(indexPath, JSON.stringify(index.slice(0, 50), null, 2));
+const kept = index.slice(0, 20);
+writeFileSync(indexPath, JSON.stringify(kept, null, 2));
+// 履歴から外れた検索結果ファイルは削除する
+for (const old of index.slice(20)) {
+  try { unlinkSync(join(dir, `${old.slug}.json`)); } catch (e) { /* なくてもOK */ }
+}
 
 console.log(`完了: ${accounts.length}アカウントを発掘 → data/discover/${slug}.json`);

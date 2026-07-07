@@ -220,7 +220,7 @@ window.showResult = async (slug) => {
       <button class="${sortMode === "followers" ? "active" : ""}" onclick="setSort('followers')">👑 フォロワー順</button>
       <button class="${sortMode === "buzz" ? "active" : ""}" onclick="setSort('buzz')">🔥 バズ投稿順</button>
     </div>
-    <div class="small" style="margin:6px 4px 0;">🔥バズ投稿順＝直近投稿の最高いいね数が大きい順（リール再生回数はInstagramが非公開のため、いいね数でバズを判定しています）</div>
+    <div class="small" style="margin:6px 4px 0;">🔥バズ投稿順＝直近${d.posts_depth ?? 12}投稿のうち最高いいね数が大きい順（リール再生回数はInstagramが非公開のため、いいね数でバズを判定しています）</div>
     ${accounts.map((a, i) => `
       <div class="card">
         <div class="row" style="align-items:flex-start;">
@@ -234,7 +234,7 @@ window.showResult = async (slug) => {
             <div class="small">フォロワー</div>
           </div>
         </div>
-        ${(a.top_posts ?? []).length ? `<div class="small" style="margin-top:10px; font-weight:700;">🔥 この人のバズ投稿TOP${a.top_posts.length}</div>` : ""}
+        ${(a.top_posts ?? []).length ? `<div class="small" style="margin-top:10px; font-weight:700;">🔥 この人のバズ投稿TOP${a.top_posts.length}（直近${a.posts_scanned ?? 12}投稿から）</div>` : ""}
         ${(a.top_posts ?? []).map((x, j) => `
           <div class="row" style="margin-top:8px; align-items:flex-start;">
             <div class="rank" style="font-size:11px;">${j + 1}</div>
