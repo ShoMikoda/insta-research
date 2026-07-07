@@ -5,7 +5,13 @@
       "id": "ikuji",
       "name": "育児",
       "icon": "🌼",
-      "accounts": [],
+      "accounts": [
+        "nonmama_maternity",
+        "momo_2mama",
+        "pi_mama.baby",
+        "mugi_ikuji",
+        "moii___diary"
+      ],
       "hashtags": [
         "育児",
         "子育てママ",
