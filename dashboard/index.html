@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>インスタ リサーチ</title>
+<title>インスタ キーワードリサーチ</title>
 <style>
   :root {
     --bg: #faf7f2;
@@ -21,303 +21,129 @@
     background: var(--bg); color: var(--text);
     max-width: 640px; margin: 0 auto; padding: 16px 14px 60px;
   }
-  header { padding: 18px 4px 10px; display: flex; align-items: flex-start; gap: 8px; }
+  header { padding: 18px 4px 4px; display: flex; align-items: flex-start; gap: 8px; }
   header > div { flex: 1; }
   h1 { font-size: 20px; letter-spacing: .02em; }
-  #date { color: var(--sub); font-size: 12px; margin-top: 4px; }
+  .lead { color: var(--sub); font-size: 12px; margin-top: 4px; line-height: 1.6; }
   .gear {
     border: 1px solid var(--border); background: var(--card); border-radius: 10px;
     font-size: 16px; padding: 6px 10px; cursor: pointer;
   }
-  nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
-  nav button, .sort-tabs button {
-    border: 1px solid var(--border); background: var(--card); color: var(--sub);
-    border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 600;
-    cursor: pointer;
-  }
-  nav button.active, .sort-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .sort-tabs { display: flex; gap: 6px; margin: 0 4px 10px; }
-  .sort-tabs button { padding: 4px 12px; font-size: 11px; }
-  h2 {
-    font-size: 14px; color: var(--sub); font-weight: 600;
-    margin: 26px 4px 10px; letter-spacing: .06em;
-  }
   .card {
     background: var(--card); border: 1px solid var(--border);
-    border-radius: 14px; padding: 14px; margin-bottom: 10px;
+    border-radius: 14px; padding: 14px; margin-top: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,.03);
   }
   .row { display: flex; align-items: center; gap: 12px; }
   .rank { font-size: 15px; font-weight: 700; color: var(--gold); min-width: 26px; text-align: center; }
-  .grow { color: var(--accent2); font-weight: 700; }
-  .shrink { color: var(--accent); font-weight: 700; }
-  .name { font-weight: 700; font-size: 14px; word-break: break-all; }
+  .name { font-weight: 700; font-size: 15px; word-break: break-all; }
   .name a { color: inherit; text-decoration: none; }
-  .metrics { margin-left: auto; text-align: right; white-space: nowrap; }
   .big { font-size: 16px; font-weight: 700; }
   .small { font-size: 11px; color: var(--sub); }
-  .bio { font-size: 11px; color: var(--sub); margin-top: 6px; line-height: 1.5; }
-  .post-cap { font-size: 12px; line-height: 1.55; margin-top: 6px; }
-  .post-meta { font-size: 11px; color: var(--sub); margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .bio { font-size: 11px; color: var(--sub); margin-top: 4px; line-height: 1.5; }
+  .post-cap { font-size: 12px; line-height: 1.55; }
+  .post-meta { font-size: 11px; color: var(--sub); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .post-meta a { color: var(--accent); font-weight: 600; }
   .badge {
     display: inline-block; font-size: 10px; padding: 2px 8px;
     border-radius: 999px; background: #f6ece7; color: var(--accent); font-weight: 600;
   }
   .empty { color: var(--sub); font-size: 12px; padding: 8px 4px; }
-  .spark { display: block; margin-top: 6px; }
-  footer { margin-top: 34px; text-align: center; color: var(--sub); font-size: 11px; }
-
-  /* 管理パネル */
-  #admin { display: none; }
-  #admin.open { display: block; }
-  #admin h3 { font-size: 13px; margin: 14px 0 8px; }
-  #admin input[type=text], #admin input[type=password] {
-    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
-    font-size: 13px; width: 100%; background: #fffdfa;
-  }
   .btn {
     border: none; background: var(--accent); color: #fff; font-weight: 600;
-    border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+    border-radius: 10px; padding: 10px 18px; font-size: 14px; cursor: pointer;
   }
   .btn.sub { background: var(--card); color: var(--sub); border: 1px solid var(--border); }
   .btn:disabled { opacity: .5; }
+  .inline { display: flex; gap: 8px; }
+  .inline input {
+    flex: 1; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+    font-size: 14px; background: #fffdfa;
+  }
   .chip {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #f4efe8; border-radius: 999px; padding: 4px 6px 4px 12px;
-    font-size: 12px; margin: 3px 4px 3px 0;
+    display: inline-block; background: #f4efe8; border: none; border-radius: 999px;
+    padding: 6px 14px; font-size: 12px; margin: 3px 4px 3px 0; cursor: pointer; font-weight: 600;
   }
-  .chip button {
-    border: none; background: #ddd5c8; color: #6b6459; border-radius: 50%;
-    width: 18px; height: 18px; font-size: 11px; line-height: 1; cursor: pointer;
+  .chip.active { background: var(--accent); color: #fff; }
+  .sort-tabs { display: flex; gap: 6px; margin-top: 10px; }
+  .sort-tabs button {
+    border: 1px solid var(--border); background: var(--card); color: var(--sub);
+    border-radius: 999px; padding: 4px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
   }
-  .inline { display: flex; gap: 8px; margin-top: 8px; }
-  .inline input { flex: 1; }
-  #adm-status { font-size: 12px; margin-top: 10px; color: var(--accent2); min-height: 1.2em; }
-  .warn { color: var(--accent); }
+  .sort-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #status { font-size: 12px; margin-top: 8px; color: var(--accent2); min-height: 1.2em; }
+  #status.warn { color: var(--accent); }
+  h2 { font-size: 13px; color: var(--sub); font-weight: 600; margin: 20px 4px 4px; letter-spacing: .06em; }
+  #settings { display: none; }
+  #settings.open { display: block; }
+  #settings input {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    font-size: 13px; background: #fffdfa;
+  }
+  code { background: #f4efe8; border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+  footer { margin-top: 34px; text-align: center; color: var(--sub); font-size: 11px; }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1 id="title">📊 インスタ リサーチ</h1>
-    <div id="date">読み込み中...</div>
+    <h1>🔎 インスタ キーワードリサーチ</h1>
+    <div class="lead">キーワードに関連するアカウントを、フォロワー数・バズ投稿つきでリサーチします</div>
   </div>
-  <button class="gear" id="gear" title="管理">⚙️</button>
+  <button class="gear" id="gear" title="設定">⚙️</button>
 </header>
-<nav id="tabs"></nav>
 
-<section id="admin" class="card">
-  <div id="adm-token-view">
-    <h3>🔑 初回設定（1回だけ・2分で終わります）</h3>
+<section id="settings" class="card">
+  <div id="token-setup">
+    <div style="font-weight:700; font-size:13px; margin-bottom:6px;">🔑 初回設定（1回だけ・2分）</div>
     <div class="small" style="line-height:1.8; margin-bottom:8px;">
-      検索や更新の実行に、GitHubの「アクセストークン」が必要です：<br>
-      <b>1.</b> 下のボタンで作成ページを開く（必要な権限は選択済み）<br>
-      <b>2.</b> Expiration を「No expiration」にして、一番下の緑の「<b>Generate token</b>」を押す<br>
-      <b>3.</b> 表示された <code>ghp_...</code> をコピーして、ここに貼り付けて保存
+      検索の実行にGitHubのアクセストークンが必要です：<br>
+      <b>1.</b> 下のボタンで作成ページを開く（権限は選択済み）<br>
+      <b>2.</b> Expirationを「No expiration」にして緑の「<b>Generate token</b>」<br>
+      <b>3.</b> 表示された <code>ghp_...</code> をコピーして貼り付け → 保存
     </div>
     <div style="margin-bottom:10px;">
       <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=insta-research-app" target="_blank"
-         class="btn" style="display:inline-block; text-decoration:none;">① トークン作成ページを開く</a>
+         class="btn" style="display:inline-block; text-decoration:none; font-size:12px;">① トークン作成ページを開く</a>
     </div>
     <div class="inline">
-      <input type="password" id="adm-token" placeholder="ghp_... を貼り付け">
-      <button class="btn" id="adm-token-save">③ 保存</button>
+      <input type="password" id="token-input" placeholder="ghp_... を貼り付け">
+      <button class="btn" id="token-save" style="font-size:12px;">③ 保存</button>
     </div>
   </div>
-  <div id="adm-main" style="display:none;">
-    <div class="row" style="justify-content:space-between;">
-      <h3 style="margin:0;">🔄 データ更新</h3>
-      <button class="btn" id="adm-refresh">今すぐ更新</button>
-    </div>
-    <div class="small">自動収集は停止中（調べたいときだけ使う方式）。このボタンでウォッチリストの最新データを収集します（3〜5分）</div>
-    <h3>📋 ウォッチリスト管理</h3>
-    <div id="adm-cats"></div>
-    <h3>➕ カテゴリ追加</h3>
-    <div class="inline">
-      <input type="text" id="adm-new-id" placeholder="ID(半角英数) 例: biyou" style="max-width:130px;">
-      <input type="text" id="adm-new-name" placeholder="表示名 例: 美容">
-      <input type="text" id="adm-new-icon" placeholder="絵文字" style="max-width:60px;">
-      <button class="btn" id="adm-new-add">追加</button>
-    </div>
-    <div style="margin-top:14px;"><button class="btn sub" id="adm-token-clear">トークン設定を削除</button></div>
+  <div id="token-ok" style="display:none;">
+    <div class="small">✅ トークン設定済み。検索が使えます。</div>
+    <button class="btn sub" id="token-clear" style="margin-top:8px; font-size:12px;">トークン設定を削除</button>
   </div>
-  <div id="adm-status"></div>
 </section>
 
-<h2>🔍 アカウント発掘（キーワード検索）</h2>
-<div class="card" id="discover">
-  <div class="inline" style="margin-top:0;">
-    <input type="text" id="disc-kw" placeholder="例: スニーカー、車、キャンプ">
-    <button class="btn" id="disc-run">検索</button>
+<div class="card">
+  <div class="inline">
+    <input type="text" id="kw" placeholder="キーワード（例: スニーカー、車、キャンプ）">
+    <button class="btn" id="run">検索</button>
   </div>
-  <div class="small" id="disc-hint" style="margin-top:6px;"></div>
-  <div id="disc-history" style="margin-top:8px;"></div>
-  <div id="disc-result"></div>
+  <div id="status"></div>
 </div>
 
-<h2>👑 フォロワーランキング</h2>
-<div id="followers"></div>
+<h2>検索履歴（タップで表示）</h2>
+<div id="history"></div>
 
-<h2>💬 エンゲージェメント率ランキング</h2>
-<div id="engagement"></div>
+<div id="result"></div>
 
-<h2>🔥 直近投稿のバズTOP10</h2>
-<div class="sort-tabs" id="buzz-sort">
-  <button data-key="likes" class="active">❤️ いいね順</button>
-  <button data-key="comments">💬 コメント順</button>
-  <button data-key="date">🕐 新着順</button>
-</div>
-<div id="buzz"></div>
-
-<h2>🎬 アカウント別リールランキング</h2>
-<div id="reels"></div>
-
-<footer>Bright Data無料枠で月額0円運用 / 調べたいときに検索・更新</footer>
+<footer>完全無料運用 / 検索1回 約3〜5分</footer>
 
 <script>
 const OWNER = "ShoMikoda", REPO = "insta-research";
 const fmt = (n) => n == null ? "-" : n.toLocaleString("ja-JP");
 const pct = (n) => n == null ? "-" : (n * 100).toFixed(1) + "%";
 const $ = (id) => document.getElementById(id);
-let categories = [], currentCat = null, currentData = null, buzzKey = "likes";
-
-/* ---------- 表示系 ---------- */
-
-function sparkline(days) {
-  // 直近14日のフォロワー推移をSVG折れ線に
-  const pts = Object.keys(days).sort().slice(-14).map((d) => days[d].followers).filter((v) => v != null);
-  if (pts.length < 2) return "";
-  const min = Math.min(...pts), max = Math.max(...pts), range = max - min || 1;
-  const W = 120, H = 26;
-  const xy = pts.map((v, i) => `${(i / (pts.length - 1)) * W},${H - 3 - ((v - min) / range) * (H - 6)}`).join(" ");
-  const up = pts[pts.length - 1] >= pts[0];
-  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-    <polyline points="${xy}" fill="none" stroke="${up ? "#7cb8a8" : "#e8927c"}" stroke-width="2" stroke-linejoin="round"/>
-  </svg>`;
-}
-
-function renderBuzz() {
-  const profiles = (currentData?.profiles ?? []).filter((p) => p.account);
-  const posts = profiles.flatMap((p) => (p.posts ?? []).map((x) => ({ ...x, account: p.account })));
-  const keyFn = buzzKey === "date" ? (x) => x.datetime ?? "" : (x) => x[buzzKey] ?? 0;
-  posts.sort((a, b) => keyFn(b) > keyFn(a) ? 1 : -1);
-  $("buzz").innerHTML = posts.slice(0, 10).map((x, i) => `
-    <div class="card">
-      <div class="row">
-        <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
-        <div class="name">@${x.account}</div>
-        ${x.content_type === "Video" ? `<span class="badge">リール/動画</span>` : ""}
-        <div class="metrics"><div class="big">❤️ ${fmt(x.likes)}</div></div>
-      </div>
-      <div class="post-cap">${(x.caption ?? "").slice(0, 100)}${(x.caption ?? "").length > 100 ? "…" : ""}</div>
-      <div class="post-meta">
-        <span>💬 ${fmt(x.comments)}</span>
-        <span>${(x.datetime ?? "").slice(0, 10)}</span>
-        <a href="${x.url}" target="_blank">投稿を見る →</a>
-      </div>
-    </div>`).join("") || `<div class="empty">データなし</div>`;
-}
-
-async function loadCategory(cat) {
-  currentCat = cat;
-  document.querySelectorAll("nav button").forEach((b) =>
-    b.classList.toggle("active", b.dataset.id === cat.id));
-  $("title").textContent = `${cat.icon ?? "📊"} ${cat.name}アカウント リサーチ`;
-
-  let d;
-  try {
-    d = await fetch(`../data/${cat.id}/latest.json?t=${Date.now()}`).then((r) => {
-      if (!r.ok) throw new Error("no data");
-      return r.json();
-    });
-  } catch (e) {
-    $("date").textContent = `「${cat.name}」はまだデータ未収集です。次回の収集後に表示されます。`;
-    ["followers", "engagement", "buzz", "reels"].forEach((id) =>
-      $(id).innerHTML = `<div class="empty">データなし</div>`);
-    currentData = null;
-    return;
-  }
-  currentData = d;
-
-  $("date").textContent = `${d.date} 更新 / ウォッチ中: ${d.profiles.length}アカウント`;
-  const profiles = d.profiles.filter((p) => p.account);
-
-  const delta = {};
-  for (const [name, days] of Object.entries(d.history || {})) {
-    const dates = Object.keys(days).sort();
-    if (dates.length >= 2) {
-      const last = days[dates[dates.length - 1]].followers;
-      const prev = days[dates[dates.length - 2]].followers;
-      if (last != null && prev != null) delta[name] = last - prev;
-    }
-  }
-
-  const followerRank = [...profiles].sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0));
-  $("followers").innerHTML = followerRank.map((p, i) => {
-    const dl = delta[p.account];
-    const dTxt = dl == null ? `<span class="small">増減は明日から表示</span>`
-      : dl >= 0 ? `<span class="grow">+${fmt(dl)}</span>` : `<span class="shrink">${fmt(dl)}</span>`;
-    return `<div class="card"><div class="row">
-      <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
-      <div><div class="name"><a href="https://www.instagram.com/${p.account}/" target="_blank">@${p.account}</a></div>
-      <div class="small">投稿 ${fmt(p.posts_count)}件</div>
-      ${sparkline(d.history?.[p.account] ?? {})}</div>
-      <div class="metrics"><div class="big">${fmt(p.followers)}</div><div class="small">${dTxt}</div></div>
-    </div><div class="bio">${(p.biography ?? "").slice(0, 80)}</div></div>`;
-  }).join("") || `<div class="empty">データなし</div>`;
-
-  const engRank = [...profiles].sort((a, b) => (b.avg_engagement ?? 0) - (a.avg_engagement ?? 0));
-  $("engagement").innerHTML = engRank.map((p, i) => `
-    <div class="card"><div class="row">
-      <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
-      <div class="name"><a href="https://www.instagram.com/${p.account}/" target="_blank">@${p.account}</a></div>
-      <div class="metrics"><div class="big">${pct(p.avg_engagement)}</div>
-      <div class="small">フォロワー ${fmt(p.followers)}</div></div>
-    </div></div>`).join("") || `<div class="empty">データなし</div>`;
-
-  renderBuzz();
-
-  const reels = d.reels ?? [];
-  const hasPlays = reels.some((r) => r.plays != null);
-  const byAccount = {};
-  for (const r of reels) {
-    if (!r.account) continue;
-    (byAccount[r.account] ??= []).push(r);
-  }
-  const metricLabel = hasPlays ? "再生" : "いいね";
-  const sortKey = (r) => (hasPlays ? r.plays ?? 0 : r.likes ?? 0);
-  $("reels").innerHTML = Object.entries(byAccount).map(([acc, list]) => {
-    list.sort((a, b) => sortKey(b) - sortKey(a));
-    const rows = list.slice(0, 5).map((r, i) => `
-      <div class="row" style="margin-top:10px; align-items:flex-start;">
-        <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
-        <div style="flex:1; min-width:0;">
-          <div class="post-cap" style="margin-top:0;">${(r.description ?? "").slice(0, 60)}${(r.description ?? "").length > 60 ? "…" : ""}</div>
-          <div class="post-meta">
-            <span>${hasPlays ? `▶️ ${fmt(r.plays)}` : `❤️ ${fmt(r.likes)}`}</span>
-            <span>💬 ${fmt(r.comments)}</span>
-            ${r.length ? `<span>⏱ ${Math.round(r.length)}秒</span>` : ""}
-            <span>${(r.date ?? "").slice(0, 10)}</span>
-            <a href="${r.url}" target="_blank">見る →</a>
-          </div>
-        </div>
-      </div>`).join("");
-    return `<div class="card">
-      <div class="name"><a href="https://www.instagram.com/${acc}/" target="_blank">@${acc}</a>
-      <span class="small">の直近リール ${metricLabel}数TOP${Math.min(list.length, 5)}</span></div>
-      ${rows}
-    </div>`;
-  }).join("") || `<div class="empty">リールデータなし(次回収集から表示されます)</div>`;
-  $("reels-note")?.remove();
-  if (!hasPlays && reels.length) {
-    $("reels").insertAdjacentHTML("beforebegin",
-      `<div class="empty" id="reels-note">※Instagramの仕様で他アカウントの再生回数は非公開のため、いいね数順で表示しています</div>`);
-  }
-}
-
-/* ---------- 管理系 (GitHub API) ---------- */
-
 const token = () => localStorage.getItem("gh_token");
+let currentSlug = null, sortMode = "followers";
+
+function status(msg, warn = false) {
+  $("status").textContent = msg;
+  $("status").className = warn ? "warn" : "";
+}
 
 async function gh(path, opts = {}) {
   const r = await fetch(`https://api.github.com${path}`, {
@@ -334,239 +160,111 @@ async function gh(path, opts = {}) {
   return r.status === 204 ? null : r.json();
 }
 
-function status(msg, warn = false) {
-  const el = $("adm-status");
-  el.textContent = msg;
-  el.className = warn ? "warn" : "";
-}
-
-function renderAdmin() {
+function renderSettings() {
   const has = !!token();
-  $("adm-token-view").style.display = has ? "none" : "block";
-  $("adm-main").style.display = has ? "block" : "none";
-  if (!has) return;
-  $("adm-cats").innerHTML = categories.map((c) => `
-    <div style="margin-bottom:12px;">
-      <div class="small" style="font-weight:700; color:var(--text);">${c.icon ?? ""} ${c.name}
-        <button class="chip" style="border:none; cursor:pointer;" onclick="removeCategory('${c.id}')">カテゴリ削除</button>
-      </div>
-      <div>${c.accounts.map((a) => `<span class="chip">@${a}<button onclick="removeAccount('${c.id}','${a}')">×</button></span>`).join("") || `<span class="small">アカウント未登録</span>`}</div>
-      <div class="inline">
-        <input type="text" id="add-${c.id}" placeholder="ユーザー名を追加 (@不要)">
-        <button class="btn" onclick="addAccount('${c.id}')">追加</button>
-      </div>
-    </div>`).join("");
+  $("token-setup").style.display = has ? "none" : "block";
+  $("token-ok").style.display = has ? "block" : "none";
 }
 
-async function saveCategories(message) {
-  const f = await gh(`/repos/${OWNER}/${REPO}/contents/config/categories.json?ref=main`);
-  const obj = JSON.parse(decodeURIComponent(escape(atob(f.content.replace(/\n/g, "")))));
-  obj.categories = categories;
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2) + "\n")));
-  await gh(`/repos/${OWNER}/${REPO}/contents/config/categories.json`, {
-    method: "PUT",
-    body: JSON.stringify({ message, content, sha: f.sha, branch: "main" }),
-  });
-}
+$("gear").addEventListener("click", () => { $("settings").classList.toggle("open"); renderSettings(); });
 
-async function afterConfigChange(msg) {
-  try {
-    status("保存中...");
-    await saveCategories(msg);
-    renderAdmin();
-    renderTabs();
-    status(`保存しました。反映は次回収集後（「今すぐ更新」で即反映できます）`);
-  } catch (e) {
-    status("保存に失敗: " + e.message, true);
-  }
-}
-
-window.addAccount = (catId) => {
-  const input = $(`add-${catId}`);
-  const name = input.value.trim().replace(/^@/, "").replace(/\/+$/, "");
-  if (!name) return;
-  const cat = categories.find((c) => c.id === catId);
-  if (cat.accounts.includes(name)) { status("既に登録済みです", true); return; }
-  cat.accounts.push(name);
-  afterConfigChange(`config: ${cat.name}に @${name} を追加`);
-};
-
-window.removeAccount = (catId, name) => {
-  if (!confirm(`@${name} をウォッチリストから削除しますか？`)) return;
-  const cat = categories.find((c) => c.id === catId);
-  cat.accounts = cat.accounts.filter((a) => a !== name);
-  afterConfigChange(`config: ${cat.name}から @${name} を削除`);
-};
-
-window.removeCategory = (catId) => {
-  const cat = categories.find((c) => c.id === catId);
-  if (!confirm(`カテゴリ「${cat.name}」を削除しますか？(収集済みデータは残ります)`)) return;
-  categories = categories.filter((c) => c.id !== catId);
-  afterConfigChange(`config: カテゴリ「${cat.name}」を削除`);
-};
-
-$("adm-new-add").addEventListener("click", () => {
-  const id = $("adm-new-id").value.trim();
-  const name = $("adm-new-name").value.trim();
-  const icon = $("adm-new-icon").value.trim() || "📊";
-  if (!/^[a-z0-9_-]+$/.test(id)) { status("IDは半角英数(小文字)で入力してください", true); return; }
-  if (!name) { status("表示名を入力してください", true); return; }
-  if (categories.some((c) => c.id === id)) { status("そのIDは使用済みです", true); return; }
-  categories.push({ id, name, icon, accounts: [], hashtags: [] });
-  ["adm-new-id", "adm-new-name", "adm-new-icon"].forEach((i) => $(i).value = "");
-  afterConfigChange(`config: カテゴリ「${name}」を追加`);
-});
-
-$("adm-refresh").addEventListener("click", async () => {
-  const btn = $("adm-refresh");
-  btn.disabled = true;
-  try {
-    status("収集を開始しています...");
-    await gh(`/repos/${OWNER}/${REPO}/actions/workflows/collect.yml/dispatches`, {
-      method: "POST",
-      body: JSON.stringify({ ref: "main" }),
-    });
-    await new Promise((r) => setTimeout(r, 8000));
-    const runs = await gh(`/repos/${OWNER}/${REPO}/actions/runs?per_page=1&event=workflow_dispatch`);
-    const runId = runs.workflow_runs?.[0]?.id;
-    for (let i = 0; i < 60; i++) {
-      await new Promise((r) => setTimeout(r, 10000));
-      const run = await gh(`/repos/${OWNER}/${REPO}/actions/runs/${runId}`);
-      status(`収集中... (${Math.round((i + 1) / 6 * 10) / 10}分経過)`);
-      if (run.status === "completed") {
-        if (run.conclusion !== "success") throw new Error("収集ジョブが失敗しました");
-        break;
-      }
-    }
-    status("収集完了。サイトに反映中です(約1分)...");
-    await new Promise((r) => setTimeout(r, 70000));
-    status("更新完了！最新データを読み込みます");
-    await loadCategory(currentCat);
-  } catch (e) {
-    status("更新に失敗: " + e.message, true);
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-$("adm-token-save").addEventListener("click", async () => {
-  const t = $("adm-token").value.trim();
+$("token-save").addEventListener("click", async () => {
+  const t = $("token-input").value.trim();
   if (!t) return;
   localStorage.setItem("gh_token", t);
   try {
     await gh(`/repos/${OWNER}/${REPO}`);
-    status("トークンを確認・保存しました");
-    renderAdmin();
+    status("トークンを確認・保存しました。検索できます");
+    renderSettings();
   } catch (e) {
     localStorage.removeItem("gh_token");
     status("トークンが無効です: " + e.message, true);
   }
 });
 
-$("adm-token-clear").addEventListener("click", () => {
-  localStorage.removeItem("gh_token");
-  renderAdmin();
-  status("トークン設定を削除しました");
-});
+$("token-clear").addEventListener("click", () => { localStorage.removeItem("gh_token"); renderSettings(); });
 
-$("gear").addEventListener("click", () => {
-  $("admin").classList.toggle("open");
-  renderAdmin();
-});
-
-/* ---------- アカウント発掘 ---------- */
-
-async function loadDiscoverHistory() {
+async function loadHistory(activeSlug) {
   let index = [];
   try {
     index = await fetch(`../data/discover/index.json?t=${Date.now()}`).then((r) => r.ok ? r.json() : []);
-  } catch (e) { /* まだ検索履歴なし */ }
-  $("disc-history").innerHTML = index.slice(0, 10).map((s) =>
-    `<span class="chip" style="cursor:pointer;" onclick="showDiscover('${s.slug}')">🔍 ${s.keyword} <span class="small">(${s.date}・${s.count}件)</span></span>`
-  ).join("") || `<span class="small">検索履歴はまだありません</span>`;
-  $("disc-hint").textContent = token()
-    ? "キーワードでそのジャンルのアカウントとバズ投稿を発掘（1回3〜5分・月300回目安）"
-    : "検索の実行には⚙️の初回設定（トークン）が必要です。過去の検索結果は誰でも見られます";
+  } catch (e) { /* なし */ }
+  $("history").innerHTML = index.slice(0, 15).map((s) =>
+    `<button class="chip ${s.slug === activeSlug ? "active" : ""}" onclick="showResult('${s.slug}')">${s.keyword} <span style="font-weight:400;">(${s.date})</span></button>`
+  ).join("") || `<span class="empty">まだ検索していません。上の検索ボックスからどうぞ</span>`;
   return index;
 }
 
-window.showDiscover = async (slug) => {
+window.showResult = async (slug) => {
+  currentSlug = slug;
   let d;
   try {
     d = await fetch(`../data/discover/${slug}.json?t=${Date.now()}`).then((r) => r.json());
   } catch (e) {
-    $("disc-result").innerHTML = `<div class="empty">結果の読み込みに失敗しました</div>`;
+    $("result").innerHTML = `<div class="empty">結果の読み込みに失敗しました</div>`;
     return;
   }
-  const catOptions = categories.map((c) => `<option value="${c.id}">${c.icon ?? ""} ${c.name}</option>`).join("");
-  $("disc-result").innerHTML = `
-    <div style="margin-top:12px;">
-      <div class="name">「${d.keyword}」の発掘結果 <span class="small">(${d.date})</span></div>
-      <div class="inline" style="align-items:center;">
-        <span class="small">追加先:</span>
-        <select id="disc-cat" style="border:1px solid var(--border); border-radius:8px; padding:6px; background:#fffdfa; font-size:12px;">${catOptions}</select>
-      </div>
-      ${d.accounts.map((a, i) => `
-        <div class="card" style="margin-top:10px; background:#fffdfa;">
-          <div class="row" style="align-items:flex-start;">
-            <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
-            <div style="flex:1; min-width:0;">
-              <div class="name"><a href="https://www.instagram.com/${a.account}/" target="_blank">@${a.account}</a>
-              ${a.is_verified ? "✅" : ""}</div>
-              <div class="small">フォロワー ${fmt(a.followers)} / 投稿 ${fmt(a.posts_count)} / エンゲージ ${pct(a.avg_engagement)}</div>
-              <div class="bio" style="margin-top:2px;">${a.biography ?? ""}</div>
-            </div>
-            <button class="btn" style="padding:5px 10px; font-size:11px;" onclick="discAdd('${a.account}')">追加</button>
+  loadHistory(slug);
+
+  const accounts = [...(d.accounts ?? [])];
+  const maxLikes = (a) => Math.max(0, ...(a.top_posts ?? []).map((x) => x.likes ?? 0));
+  if (sortMode === "buzz") accounts.sort((a, b) => maxLikes(b) - maxLikes(a));
+  else accounts.sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0));
+
+  $("result").innerHTML = `
+    <h2>「${d.keyword}」の検索結果 — ${d.accounts.length}アカウント（${d.date}）</h2>
+    <div class="small" style="margin:0 4px;">Instagram内を「${d.keyword}」で検索してヒットしたアカウントです</div>
+    <div class="sort-tabs">
+      <button class="${sortMode === "followers" ? "active" : ""}" onclick="setSort('followers')">👑 フォロワー順</button>
+      <button class="${sortMode === "buzz" ? "active" : ""}" onclick="setSort('buzz')">🔥 バズ投稿順</button>
+    </div>
+    ${accounts.map((a, i) => `
+      <div class="card">
+        <div class="row" style="align-items:flex-start;">
+          <div class="rank">${["🥇","🥈","🥉"][i] ?? i + 1}</div>
+          <div style="flex:1; min-width:0;">
+            <div class="name"><a href="https://www.instagram.com/${a.account}/" target="_blank">@${a.account} ↗</a> ${a.is_verified ? "✅" : ""}</div>
+            <div class="bio">${a.biography ?? ""}</div>
           </div>
-          ${(a.top_posts ?? []).map((x, j) => `
-            <div class="row" style="margin-top:8px; align-items:flex-start;">
-              <div class="rank" style="font-size:11px;">🔥${j + 1}</div>
-              <div style="flex:1; min-width:0;">
-                <div class="post-cap" style="margin-top:0;">${x.caption}${x.caption?.length >= 90 ? "…" : ""}</div>
-                <div class="post-meta">
-                  <span>❤️ ${fmt(x.likes)}</span>
-                  <span>💬 ${fmt(x.comments)}</span>
-                  ${x.is_video ? `<span class="badge">リール/動画</span>` : ""}
-                  <span>${x.date ?? ""}</span>
-                  <a href="${x.url}" target="_blank">見る →</a>
-                </div>
+          <div style="text-align:right; white-space:nowrap;">
+            <div class="big">${fmt(a.followers)}</div>
+            <div class="small">フォロワー</div>
+          </div>
+        </div>
+        ${(a.top_posts ?? []).length ? `<div class="small" style="margin-top:10px; font-weight:700;">🔥 この人のバズ投稿TOP${a.top_posts.length}</div>` : ""}
+        ${(a.top_posts ?? []).map((x, j) => `
+          <div class="row" style="margin-top:8px; align-items:flex-start;">
+            <div class="rank" style="font-size:11px;">${j + 1}</div>
+            <div style="flex:1; min-width:0;">
+              <div class="post-cap">${x.caption ?? ""}${(x.caption ?? "").length >= 90 ? "…" : ""}</div>
+              <div class="post-meta">
+                <span>❤️ ${fmt(x.likes)}</span>
+                <span>💬 ${fmt(x.comments)}</span>
+                ${x.is_video ? `<span class="badge">リール/動画</span>` : ""}
+                <span>${x.date ?? ""}</span>
+                <a href="${x.url}" target="_blank">投稿を見る ↗</a>
               </div>
-            </div>`).join("")}
-        </div>`).join("") || `<div class="empty">アカウントが見つかりませんでした</div>`}
-    </div>`;
+            </div>
+          </div>`).join("")}
+      </div>`).join("") || `<div class="empty">アカウントが見つかりませんでした</div>`}`;
 };
 
-window.discAdd = (name) => {
-  if (!token()) {
-    $("admin").classList.add("open");
-    renderAdmin();
-    $("admin").scrollIntoView({ behavior: "smooth" });
-    status("⬇ 追加するには、この初回設定（2分）だけお願いします", true);
-    return;
-  }
-  const catId = $("disc-cat").value;
-  const cat = categories.find((c) => c.id === catId);
-  if (cat.accounts.includes(name)) { status(`@${name} は既に「${cat.name}」に登録済みです`, true); $("admin").classList.add("open"); return; }
-  cat.accounts.push(name);
-  $("admin").classList.add("open");
-  afterConfigChange(`config: ${cat.name}に @${name} を追加(発掘から)`);
-};
+window.setSort = (m) => { sortMode = m; if (currentSlug) showResult(currentSlug); };
 
-$("disc-run").addEventListener("click", async () => {
-  const kw = $("disc-kw").value.trim();
-  if (!kw) return;
+$("run").addEventListener("click", async () => {
+  const kw = $("kw").value.trim();
+  if (!kw) { status("キーワードを入力してください", true); return; }
   if (!token()) {
-    $("admin").classList.add("open");
-    renderAdmin();
-    $("admin").scrollIntoView({ behavior: "smooth" });
-    status("⬇ 検索を使うには、この初回設定（2分）だけお願いします", true);
+    $("settings").classList.add("open");
+    renderSettings();
+    $("settings").scrollIntoView({ behavior: "smooth" });
+    status("⬆ 検索を使うには、上の初回設定（2分）だけお願いします", true);
     return;
   }
-  const btn = $("disc-run");
+  const btn = $("run");
   btn.disabled = true;
-  const hint = $("disc-hint");
   try {
-    hint.textContent = "検索を開始しています...";
+    status("検索を開始しています...");
     await gh(`/repos/${OWNER}/${REPO}/actions/workflows/discover.yml/dispatches`, {
       method: "POST",
       body: JSON.stringify({ ref: "main", inputs: { keyword: kw } }),
@@ -577,56 +275,28 @@ $("disc-run").addEventListener("click", async () => {
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 10000));
       const run = await gh(`/repos/${OWNER}/${REPO}/actions/runs/${runId}`);
-      hint.textContent = `「${kw}」を発掘中... (約${Math.round((i + 1) / 6 * 10) / 10}分経過)`;
+      status(`「${kw}」をリサーチ中... (約${Math.round((i + 1) / 6 * 10) / 10}分経過。3〜5分かかります)`);
       if (run.status === "completed") {
-        if (run.conclusion !== "success") throw new Error("検索ジョブが失敗しました(キーワードを変えてお試しください)");
+        if (run.conclusion !== "success") throw new Error("検索に失敗しました。キーワードを変えてお試しください");
         break;
       }
     }
-    hint.textContent = "検索完了。結果を反映中(約1分)...";
+    status("リサーチ完了。結果を反映中(約1分)...");
     await new Promise((r) => setTimeout(r, 70000));
-    const index = await loadDiscoverHistory();
-    if (index[0]) showDiscover(index[0].slug);
-    hint.textContent = "発掘完了！";
+    const index = await loadHistory();
+    if (index[0]) showResult(index[0].slug);
+    status(`「${kw}」の結果を表示しました`);
+    $("kw").value = "";
   } catch (e) {
-    hint.textContent = "検索に失敗: " + e.message;
+    status(e.message, true);
   } finally {
     btn.disabled = false;
   }
 });
 
-$("buzz-sort").addEventListener("click", (e) => {
-  const key = e.target.dataset?.key;
-  if (!key) return;
-  buzzKey = key;
-  document.querySelectorAll("#buzz-sort button").forEach((b) =>
-    b.classList.toggle("active", b.dataset.key === key));
-  renderBuzz();
-});
+$("kw").addEventListener("keydown", (e) => { if (e.key === "Enter") $("run").click(); });
 
-/* ---------- 起動 ---------- */
-
-function renderTabs() {
-  $("tabs").innerHTML = categories.map((c) =>
-    `<button data-id="${c.id}">${c.icon ?? ""} ${c.name}</button>`).join("");
-}
-
-fetch(`../config/categories.json?t=${Date.now()}`)
-  .then((r) => r.json())
-  .then((cfg) => {
-    categories = cfg.categories;
-    renderTabs();
-    $("tabs").addEventListener("click", (e) => {
-      const id = e.target.dataset?.id;
-      if (id) loadCategory(categories.find((c) => c.id === id));
-    });
-    const initial = new URLSearchParams(location.search).get("cat");
-    loadCategory(categories.find((c) => c.id === initial) ?? categories[0]);
-    loadDiscoverHistory();
-  })
-  .catch((e) => {
-    $("date").textContent = "カテゴリ設定の読み込みに失敗: " + e.message;
-  });
+loadHistory().then((index) => { if (index[0]) showResult(index[0].slug); });
 </script>
 </body>
 </html>
